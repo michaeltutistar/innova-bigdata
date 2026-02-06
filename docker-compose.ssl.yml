@@ -1,0 +1,75 @@
+# Docker Compose con configuración SSL
+# Para usar esta configuración:
+# 1. Obtener certificados SSL con Certbot
+# 2. Copiar certificados a ./ssl/fullchain.pem y ./ssl/privkey.pem
+# 3. Usar: docker-compose -f docker-compose.ssl.yml up -d
+
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: innovabigdata-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:kIiO#$q4Fd$NWI-uWV15SvL#erQ*@db:5432/innovabigdata
+      - SECRET_KEY=tu_secret_key_super_segura_aqui_cambiar_en_produccion
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=240
+      - VERIFIK_API_URL=https://api.verifik.co/v2/co/registraduria/votacion
+      - VERIFIK_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRJZCI6IjY5ODRhZTgwZDAyN2JiNDE1MzhkNGYwNyIsInAiOiJ2ayIsIkpXVFBocmFzZSI6IlE5VVlFRjBSQTAiLCJleHBpcmVzQXQiOjE3NzI4MTQ3OTUsImlhdCI6MTc3MDM5NTU5NX0.vDoUkJlZllRbf7DX5wzxokRBr8B18Mqncwi8flHpv2s
+      - CORS_ORIGINS=https://innovabigdata.com,http://localhost:5173,http://localhost:3000
+      - HOST=0.0.0.0
+      - PORT=8000
+    depends_on:
+      - db
+    restart: unless-stopped
+    volumes:
+      - backend_data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: innovabigdata-frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    volumes:
+      # Montar certificados SSL
+      - ./ssl:/etc/nginx/ssl:ro
+      # Montar configuración SSL de nginx
+      - ./frontend/nginx.conf.ssl:/etc/nginx/conf.d/default.conf:ro
+
+  db:
+    image: postgres:15-alpine
+    container_name: innovabigdata-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=kIiO#$q4Fd$NWI-uWV15SvL#erQ*
+      - POSTGRES_DB=innovabigdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d innovabigdata"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  backend_data:
+
+networks:
+  default:
+    name: innovabigdata-network

@@ -1,0 +1,36 @@
+# Variables de entorno (contienen secretos)
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.eggs/
+
+# Node / Frontend
+node_modules/
+dist/
+.npm
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs y backups locales
+*.log
+/opt/backups/
+
+# Claves PEM (no subir al repositorio)
+*.pem
+
+# Carpeta clon previo (evitar subir como submódulo)
+/innova-bigdata/

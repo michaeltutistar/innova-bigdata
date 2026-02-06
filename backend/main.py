@@ -1,0 +1,1249 @@
+"""
+Sistema Web MVP de Registro de Líderes y Sufragantes
+Backend con FastAPI - API REST para gestión de datos electorales
+"""
+
+import os
+import logging
+from datetime import datetime, timedelta
+from typing import List, Optional
+import json
+from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Query
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, ForeignKey, func, text
+from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session
+from sqlalchemy.exc import IntegrityError
+from pydantic import BaseModel, Field, field_validator
+import bcrypt
+from jose import JWTError, jwt
+import httpx
+import openpyxl
+from io import BytesIO
+
+# =====================
+# CONFIGURACIÓN
+# =====================
+
+SECRET_KEY = os.getenv("SECRET_KEY", "tu_secret_key_super_segura_aqui_cambiar_en_produccion")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "240"))
+
+VERIFIK_API_URL = os.getenv("VERIFIK_API_URL", "https://api.verifik.co/v2/co/registraduria/votacion")
+VERIFIK_TOKEN = os.getenv("VERIFIK_TOKEN", "")
+
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://innovabigdata.com,http://localhost:5173").split(",")
+
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:kIiO#$q4Fd$NWI-uWV15SvL#erQ*@db:5432/innovabigdata")
+
+# =====================
+# LOGGING
+# =====================
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+# =====================
+# BASE DE DATOS
+# =====================
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    rol = Column(String(20), nullable=False)
+    activo = Column(Boolean, default=True)
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    ultimo_login = Column(DateTime)
+
+class Lider(Base):
+    __tablename__ = "lideres"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(Text, nullable=False)
+    cedula = Column(String(10), unique=True, index=True, nullable=False)
+    edad = Column(Integer, nullable=False)
+    celular = Column(String(10), nullable=False)
+    direccion = Column(Text, nullable=False)
+    genero = Column(String(10), nullable=False)
+    departamento = Column(Text, nullable=False)
+    municipio = Column(Text, nullable=False)
+    barrio = Column(Text)
+    zona_influencia = Column(Text)
+    tipo_liderazgo = Column(String(50))
+    usuario_registro = Column(String(100))
+    fecha_registro = Column(DateTime, default=datetime.utcnow)
+    activo = Column(Boolean, default=True)
+
+    sufragantes = relationship("Sufragante", back_populates="lider")
+
+class Sufragante(Base):
+    __tablename__ = "sufragantes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(Text, nullable=False)
+    cedula = Column(String(10), unique=True, index=True, nullable=False)
+    edad = Column(Integer, nullable=False)
+    celular = Column(String(10), nullable=True)  # Opcional: "No tiene"
+    direccion_residencia = Column(Text, nullable=False)
+    genero = Column(String(10), nullable=False)
+
+    # Datos de Verifik
+    departamento = Column(Text)
+    municipio = Column(Text)
+    lugar_votacion = Column(Text)
+    mesa_votacion = Column(Text)
+    direccion_puesto = Column(Text)
+
+    # Estado de validación
+    estado_validacion = Column(String(20), nullable=False)
+    # Campos que no coincidieron con Verifik (JSON array, solo si estado=revision)
+    discrepancias_verifik = Column(Text, nullable=True)
+
+    # Referencias
+    lider_id = Column(Integer, ForeignKey("lideres.id"), index=True)
+    usuario_registro = Column(String(100))
+    fecha_registro = Column(DateTime, default=datetime.utcnow)
+
+    lider = relationship("Lider", back_populates="sufragantes")
+
+Base.metadata.create_all(bind=engine)
+
+# =====================
+# Pydantic Models
+# =====================
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user_role: str
+    username: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+    rol: Optional[str] = None
+
+class UsuarioCreate(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=6)
+    rol: str = Field(..., pattern="^(superadmin|operador)$")
+
+class UsuarioResponse(BaseModel):
+    id: int
+    username: str
+    rol: str
+    activo: bool
+    fecha_creacion: datetime
+
+    class Config:
+        from_attributes = True
+
+class LiderCreate(BaseModel):
+    nombre: str = Field(..., min_length=2, max_length=200)
+    cedula: str = Field(..., min_length=6, max_length=10, pattern="^[0-9]+$")
+    edad: int = Field(..., ge=18, le=120)
+    celular: str = Field(..., min_length=10, max_length=10, pattern="^[0-9]+$")
+    direccion: str = Field(..., min_length=5, max_length=500)
+    genero: str = Field(..., pattern="^(M|F|Otro)$")
+    departamento: str = Field(..., min_length=2, max_length=100)
+    municipio: str = Field(..., min_length=2, max_length=100)
+    barrio: Optional[str] = None
+    zona_influencia: Optional[str] = None
+    tipo_liderazgo: Optional[str] = Field(None, pattern="^(Comunitario|Social|Politico|Religioso|Juvenil|Otro)$")
+
+class LiderResponse(BaseModel):
+    id: int
+    nombre: str
+    cedula: str
+    edad: int
+    celular: str
+    direccion: str
+    genero: str
+    departamento: str
+    municipio: str
+    barrio: Optional[str]
+    zona_influencia: Optional[str]
+    tipo_liderazgo: Optional[str]
+    usuario_registro: Optional[str]
+    fecha_registro: datetime
+    activo: bool
+
+    class Config:
+        from_attributes = True
+
+class VerifikResponse(BaseModel):
+    """Respuesta de la API de Verifik"""
+    success: bool
+    data: Optional[dict] = None
+    error: Optional[str] = None
+
+class VerifyRequest(BaseModel):
+    """Datos ingresados manualmente para comparar con Verifik"""
+    cedula: str = Field(..., min_length=6, max_length=10, pattern="^[0-9]+$")
+    department: Optional[str] = None
+    municipality: Optional[str] = None
+    votingStation: Optional[str] = None
+    pollingTable: Optional[str] = None
+    address: Optional[str] = None
+
+class SufraganteCreate(BaseModel):
+    """Modelo para crear sufragante (datos Verifik ingresados manualmente + estado de verificación)"""
+    nombre: str = Field(..., min_length=2, max_length=200)
+    cedula: str = Field(..., min_length=6, max_length=10, pattern="^[0-9]+$")
+    edad: int = Field(..., ge=18, le=120)
+    celular: Optional[str] = None  # Opcional: null o vacío = "No tiene"; si se envía debe ser 10 dígitos y empezar por 3
+    direccion_residencia: str = Field(..., min_length=5, max_length=500)
+    genero: str = Field(..., pattern="^(M|F|Otro)$")
+    lider_id: Optional[int] = None
+    # Datos de Verifik (ingresados manualmente)
+    departamento: Optional[str] = None
+    municipio: Optional[str] = None
+    lugar_votacion: Optional[str] = None
+    mesa_votacion: Optional[str] = None
+    direccion_puesto: Optional[str] = None
+    # Estado determinado al hacer "Verificar" (comparación manual vs Verifik)
+    estado_validacion: str = Field(..., pattern="^(verificado|revision|inconsistente|sin_verificar)$")
+    # Campos que no coincidieron (solo cuando estado=revision)
+    discrepancias: Optional[List[str]] = None
+
+    @field_validator("celular")
+    @classmethod
+    def celular_debe_iniciar_por_3(cls, v):
+        if v is None or (isinstance(v, str) and v.strip() in ("", "NO TIENE", "NO TIENE CELULAR")):
+            return None
+        v = v.strip()
+        if not v:
+            return None
+        if len(v) != 10 or not v.isdigit():
+            raise ValueError("El celular debe tener 10 dígitos")
+        if v[0] != "3":
+            raise ValueError("El celular debe iniciar por el número 3")
+        return v
+
+class SufraganteResponse(BaseModel):
+    id: int
+    nombre: str
+    cedula: str
+    edad: int
+    celular: Optional[str] = None
+    direccion_residencia: str
+    genero: str
+    departamento: Optional[str]
+    municipio: Optional[str]
+    lugar_votacion: Optional[str]
+    mesa_votacion: Optional[str]
+    direccion_puesto: Optional[str]
+    estado_validacion: str
+    discrepancias_verifik: Optional[str] = None
+    lider_id: Optional[int]
+    usuario_registro: Optional[str]
+    fecha_registro: datetime
+
+    class Config:
+        from_attributes = True
+
+class SufraganteUpdate(BaseModel):
+    """Actualización parcial de sufragante (datos Verifik y estado de verificación)"""
+    departamento: Optional[str] = None
+    municipio: Optional[str] = None
+    lugar_votacion: Optional[str] = None
+    mesa_votacion: Optional[str] = None
+    direccion_puesto: Optional[str] = None
+    estado_validacion: Optional[str] = Field(None, pattern="^(verificado|revision|inconsistente|sin_verificar)$")
+    discrepancias: Optional[List[str]] = None
+
+class DashboardMetrics(BaseModel):
+    total_lideres: int
+    total_sufragantes: int
+    sufragantes_verificados: int
+    sufragantes_inconsistentes: int
+    sufragantes_en_revision: int
+    registros_hoy: int
+    registros_semana: int
+    registros_mes: int
+
+class SufraganteMunicipio(BaseModel):
+    municipio: str
+    total: int
+
+class SufragantePorLider(BaseModel):
+    lider_id: int
+    lider_nombre: str
+    lider_cedula: str
+    total_sufragantes: int
+
+class ExportRequest(BaseModel):
+    formato: str = Field(..., pattern="^(xlsx)$")
+
+# =====================
+# AUTENTICACIÓN (bcrypt directo; passlib incompatible con bcrypt 4.1+)
+# =====================
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"),
+            hashed_password.encode("utf-8") if isinstance(hashed_password, str) else hashed_password,
+        )
+    except Exception:
+        return False
+
+def get_password_hash(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="No se pudo validar las credenciales",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        rol: str = payload.get("rol")
+        if username is None:
+            raise credentials_exception
+        return TokenData(username=username, rol=rol)
+    except JWTError:
+        raise credentials_exception
+
+def require_superadmin(current_user: TokenData = Depends(get_current_user)):
+    if current_user.rol != "superadmin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requiere rol de superadmin"
+        )
+    return current_user
+
+# =====================
+# DEPENDENCIAS
+# =====================
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def normalizar_texto(texto: str) -> str:
+    """Normaliza texto a mayúsculas y elimina espacios dobles"""
+    if texto:
+        return " ".join(texto.upper().split())
+    return texto
+
+# =====================
+# API VERIFIK
+# =====================
+
+async def verificar_cedula(cedula: str) -> dict:
+    """
+    Consulta la API de Verifik para verificar una cédula
+    """
+    token = (VERIFIK_TOKEN or "").strip()
+    if not token or token == "tu_token_verifik" or len(token) < 20:
+        logger.warning("VERIFIK_TOKEN no configurado o inválido (longitud < 20)")
+        return {
+            "success": False,
+            "data": None,
+            "error": "API Verifik no configurada. Configure VERIFIK_TOKEN en .env con un token válido de https://verifik.co"
+        }
+
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+
+    # Verifik espera el parámetro "documentNumber" (no "cedula"); sin espacios ni puntos
+    document_number = (cedula or "").strip().replace(" ", "").replace(".", "")
+    params = {"documentNumber": document_number}
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(VERIFIK_API_URL, headers=headers, params=params)
+
+        if response.status_code == 200:
+            raw = response.json()
+            # Verifik devuelve { "data": { department, municipality, address, ... }, "signature": ... }
+            data = raw.get("data", raw) if isinstance(raw, dict) else raw
+            return {
+                "success": True,
+                "data": data,
+                "error": None
+            }
+        elif response.status_code == 404:
+            return {
+                "success": False,
+                "data": None,
+                "error": "Cédula no encontrada"
+            }
+        elif response.status_code == 401:
+            logger.error(f"Verifik 401 - Token inválido o expirado. Response: {response.text}")
+            return {
+                "success": False,
+                "data": None,
+                "error": "Token Verifik inválido o expirado. Renueve VERIFIK_TOKEN en .env desde el panel de Verifik."
+            }
+        elif response.status_code == 409:
+            logger.warning(f"Verifik 409 - Parámetro documentNumber faltante o inválido. Response: {response.text}")
+            return {
+                "success": False,
+                "data": None,
+                "error": "Número de cédula requerido. Ingrese una cédula válida (solo números, 6-10 dígitos)."
+            }
+        else:
+            error_msg = f"Error en API Verifik: {response.status_code}"
+            logger.error(f"{error_msg} - Response: {response.text}")
+            return {
+                "success": False,
+                "data": None,
+                "error": error_msg
+            }
+
+    except httpx.RequestError as e:
+        logger.error(f"Error de conexión con Verifik: {e}")
+        return {
+            "success": False,
+            "data": None,
+            "error": f"Error de conexión: {str(e)}"
+        }
+
+def _normalizar_para_comparar(val: Optional[str]) -> str:
+    """Normaliza un valor para comparación (strip, mayúsculas, espacios colapsados)."""
+    if val is None:
+        return ""
+    return " ".join(str(val).strip().upper().split())
+
+
+def _normalizar_lugar_votacion(val: Optional[str]) -> str:
+    """
+    Normalización flexible solo para 'Lugar de votación':
+    quita puntuación, expande abreviaturas, quita sufijos y palabras vacías.
+    """
+    if val is None:
+        return ""
+    s = str(val).strip().upper()
+    for c in ".-,_;:":
+        s = s.replace(c, " ")
+    s = " ".join(s.split())
+    # Abreviaturas comunes en registraduría
+    reemplazos = [
+        ("LIC ", "LICEO "), ("LIC.", "LICEO "), ("COL ", "COLEGIO "), ("COL.", "COLEGIO "),
+        ("INST ", "INSTITUTO "), ("INST.", "INSTITUTO "), ("ESC ", "ESCUELA "), ("ESC.", "ESCUELA "),
+        ("IED ", "INSTITUCION "), ("I E ", "INSTITUCION "),
+    ]
+    for a, b in reemplazos:
+        s = s.replace(a, b)
+    # Quitar sufijos típicos (tras guión o espacio)
+    for sufijo in ["BACHILLERATO", "PRIMARIA", "SECUNDARIA", "SEDE", "PRINCIPAL", "CENTRO"]:
+        if sufijo in s:
+            s = s.replace("-" + sufijo, "").replace(" " + sufijo, "")
+    s = " ".join(s.split())
+    return s
+
+
+def _coincide_lugar_votacion(verifik_val: Optional[str], manual_val: Optional[str]) -> bool:
+    """
+    Comparación flexible para Lugar de votación: normalización + contención o palabras clave.
+    """
+    v = _normalizar_lugar_votacion(verifik_val)
+    m = _normalizar_lugar_votacion(manual_val)
+    if not v or not m:
+        return v == m
+    if v == m:
+        return True
+    # Contención: si uno está contenido en el otro (ej. "LICEO LA MERCED" en "LICEO DE LA MERCED")
+    if m in v or v in m:
+        return True
+    # Palabras clave: quitar stopwords y ver si las palabras del manual están en Verifik
+    stop = {"DE", "LA", "EL", "DEL", "LOS", "LAS", "UN", "UNA", "Y", "E", "AL", "EN"}
+    words_v = set(w for w in v.split() if w and w not in stop and len(w) > 1)
+    words_m = set(w for w in m.split() if w and w not in stop and len(w) > 1)
+    if not words_m:
+        return True
+    return words_m <= words_v or words_v <= words_m
+
+
+def comparar_datos_verifik(verifik_data: Optional[dict], manual: dict) -> tuple[str, list[str]]:
+    """
+    Compara datos ingresados manualmente con la respuesta de Verifik.
+    Retorna (estado, lista_de_campos_que_no_coinciden).
+    Para Lugar de votación se usa comparación flexible (abreviaturas, contención).
+    """
+    if not verifik_data or not isinstance(verifik_data, dict):
+        return "inconsistente", []
+
+    campos = [
+        ("department", "departamento"),
+        ("municipality", "municipio"),
+        ("votingStation", "lugar_votacion"),
+        ("pollingTable", "mesa_votacion"),
+    ]
+    discrepancias = []
+    for key_verifik, key_manual in campos:
+        v_raw = verifik_data.get(key_verifik)
+        m_raw = manual.get(key_verifik) or manual.get(key_manual)
+        if key_verifik == "votingStation":
+            coincide = _coincide_lugar_votacion(v_raw, m_raw)
+        else:
+            coincide = _normalizar_para_comparar(v_raw) == _normalizar_para_comparar(m_raw)
+        if not coincide:
+            discrepancias.append(key_verifik)
+
+    if not discrepancias:
+        return "verificado", []
+    return "revision", discrepancias
+
+# =====================
+# APLICACIÓN FASTAPI
+# =====================
+
+app = FastAPI(
+    title="API Sistema de Registro",
+    description="API REST para gestión de líderes y sufragantes",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.on_event("startup")
+def startup_add_discrepancias_column():
+    """Añade columna discrepancias_verifik si la tabla ya existía sin ella."""
+    try:
+        with engine.connect() as conn:
+            with conn.begin():
+                conn.execute(text("ALTER TABLE sufragantes ADD COLUMN IF NOT EXISTS discrepancias_verifik TEXT"))
+                try:
+                    conn.execute(text("ALTER TABLE sufragantes ALTER COLUMN celular DROP NOT NULL"))
+                except Exception:
+                    pass
+                try:
+                    conn.execute(text("ALTER TABLE sufragantes DROP CONSTRAINT IF EXISTS sufragantes_estado_validacion_check"))
+                    conn.execute(text("ALTER TABLE sufragantes ADD CONSTRAINT sufragantes_estado_validacion_check CHECK (estado_validacion IN ('verificado', 'inconsistente', 'revision', 'sin_verificar'))"))
+                except Exception:
+                    pass
+    except Exception as e:
+        logger.warning(f"Startup: no se pudo añadir columna discrepancias_verifik (puede existir ya): {e}")
+
+# =====================
+# RUTAS DE AUTENTICACIÓN
+# =====================
+
+@app.post("/auth/login", response_model=Token)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    """
+    Endpoint de login para usuarios
+    """
+    usuario = db.query(Usuario).filter(Usuario.username == form_data.username).first()
+
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario no encontrado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not usuario.activo:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario inactivo",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not verify_password(form_data.password, usuario.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Contraseña incorrecta",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Actualizar último login
+    usuario.ultimo_login = datetime.utcnow()
+    db.commit()
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": usuario.username, "rol": usuario.rol},
+        expires_delta=access_token_expires
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_role": usuario.rol,
+        "username": usuario.username
+    }
+
+@app.post("/auth/register", response_model=UsuarioResponse)
+async def register(usuario_data: UsuarioCreate,
+                  current_user: TokenData = Depends(require_superadmin),
+                  db: Session = Depends(get_db)):
+    """
+    Registrar nuevo usuario (solo superadmin)
+    """
+    # Verificar si ya existe el username
+    existente = db.query(Usuario).filter(Usuario.username == usuario_data.username).first()
+    if existente:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El nombre de usuario ya existe"
+        )
+
+    # Crear nuevo usuario
+    nuevo_usuario = Usuario(
+        username=usuario_data.username,
+        password_hash=get_password_hash(usuario_data.password),
+        rol=usuario_data.rol,
+        activo=True
+    )
+
+    db.add(nuevo_usuario)
+    db.commit()
+    db.refresh(nuevo_usuario)
+
+    logger.info(f"Usuario {current_user.username} creó nuevo usuario: {usuario_data.username}")
+
+    return nuevo_usuario
+
+@app.get("/auth/me", response_model=UsuarioResponse)
+async def get_current_user_info(current_user: TokenData = Depends(get_current_user),
+                                db: Session = Depends(get_db)):
+    """
+    Obtener información del usuario actual
+    """
+    usuario = db.query(Usuario).filter(Usuario.username == current_user.username).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return usuario
+
+# =====================
+# RUTAS DE LÍDERES
+# =====================
+
+@app.get("/leaders", response_model=List[LiderResponse])
+async def listar_lideres(
+    skip: int = 0,
+    limit: int = 100,
+    activo: Optional[bool] = None,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Listar líderes con paginación y filtros
+    """
+    query = db.query(Lider)
+
+    if activo is not None:
+        query = query.filter(Lider.activo == activo)
+
+    lideres = query.order_by(Lider.nombre).offset(skip).limit(limit).all()
+    return lideres
+
+@app.get("/leaders/all", response_model=List[LiderResponse])
+async def listar_todos_lideres(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Listar todos los líderes activos (para selects)
+    """
+    lideres = db.query(Lider).filter(Lider.activo == True).order_by(Lider.nombre).all()
+    return lideres
+
+@app.post("/leaders", response_model=LiderResponse)
+async def crear_lider(
+    lider_data: LiderCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Crear nuevo líder (solo superadmin, sin verificación Verifik)
+    """
+    # Verificar cédula única
+    existente = db.query(Lider).filter(Lider.cedula == lider_data.cedula).first()
+    if existente:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La cédula ya está registrada"
+        )
+
+    # Normalizar datos
+    nuevo_lider = Lider(
+        nombre=normalizar_texto(lider_data.nombre),
+        cedula=lider_data.cedula,
+        edad=lider_data.edad,
+        celular=lider_data.celular,
+        direccion=lider_data.direccion,
+        genero=lider_data.genero.upper(),
+        departamento=lider_data.departamento.upper(),
+        municipio=lider_data.municipio.upper(),
+        barrio=normalizar_texto(lider_data.barrio),
+        zona_influencia=lider_data.zona_influencia,
+        tipo_liderazgo=lider_data.tipo_liderazgo,
+        usuario_registro=current_user.username
+    )
+
+    db.add(nuevo_lider)
+    db.commit()
+    db.refresh(nuevo_lider)
+
+    logger.info(f"Superadmin {current_user.username} creó líder: {nuevo_lider.id}")
+
+    return nuevo_lider
+
+@app.put("/leaders/{lider_id}", response_model=LiderResponse)
+async def actualizar_lider(
+    lider_id: int,
+    lider_data: LiderCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Actualizar líder (solo superadmin)
+    """
+    lider = db.query(Lider).filter(Lider.id == lider_id).first()
+    if not lider:
+        raise HTTPException(status_code=404, detail="Líder no encontrado")
+
+    # Verificar cédula única (si cambió)
+    if lider_data.cedula != lider.cedula:
+        existente = db.query(Lider).filter(Lider.cedula == lider_data.cedula).first()
+        if existente:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La cédula ya está registrada"
+            )
+
+    # Actualizar campos
+    lider.nombre = normalizar_texto(lider_data.nombre)
+    lider.cedula = lider_data.cedula
+    lider.edad = lider_data.edad
+    lider.celular = lider_data.celular
+    lider.direccion = lider_data.direccion
+    lider.genero = lider_data.genero.upper()
+    lider.departamento = lider_data.departamento.upper()
+    lider.municipio = lider_data.municipio.upper()
+    lider.barrio = normalizar_texto(lider_data.barrio)
+    lider.zona_influencia = lider_data.zona_influencia
+    lider.tipo_liderazgo = lider_data.tipo_liderazgo
+
+    db.commit()
+    db.refresh(lider)
+
+    logger.info(f"Superadmin {current_user.username} actualizó líder: {lider_id}")
+
+    return lider
+
+@app.delete("/leaders/{lider_id}")
+async def desactivar_lider(
+    lider_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Desactivar líder (solo superadmin)
+    """
+    lider = db.query(Lider).filter(Lider.id == lider_id).first()
+    if not lider:
+        raise HTTPException(status_code=404, detail="Líder no encontrado")
+
+    lider.activo = False
+    db.commit()
+
+    logger.info(f"Superadmin {current_user.username} desactivó líder: {lider_id}")
+
+    return {"message": "Líder desactivado correctamente"}
+
+# =====================
+# RUTAS DE SUFRAGANTES
+# =====================
+
+@app.post("/voters/verify")
+async def verificar_cedula_endpoint(
+    body: Optional[VerifyRequest] = None,
+    cedula: Optional[str] = Query(None, alias="cedula"),
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Verifica cédula en Verifik y compara con datos ingresados manualmente.
+    Si se envían datos manuales (body), retorna estado: verificado | revision | inconsistente.
+    """
+    doc = (body.cedula if body else cedula) or ""
+    if not doc or not doc.isdigit() or len(doc) < 6 or len(doc) > 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cédula inválida: debe tener entre 6 y 10 dígitos"
+        )
+
+    existente = db.query(Sufragante).filter(Sufragante.cedula == doc).first()
+    if existente:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La cédula ya está registrada en el sistema"
+        )
+
+    resultado = await verificar_cedula(doc)
+    verifik_data = resultado.get("data") if resultado["success"] else None
+
+    if not resultado["success"]:
+        return {
+            "success": False,
+            "error": resultado["error"],
+            "data": None,
+            "estado": "inconsistente",
+            "discrepancias": []
+        }
+
+    if not body:
+        return {
+            "success": True,
+            "data": verifik_data,
+            "error": None,
+            "estado": None,
+            "discrepancias": []
+        }
+
+    manual = {
+        "department": body.department or "",
+        "municipality": body.municipality or "",
+        "votingStation": body.votingStation or "",
+        "pollingTable": body.pollingTable or "",
+        "address": body.address or "",
+    }
+    estado, discrepancias = comparar_datos_verifik(verifik_data, manual)
+
+    return {
+        "success": True,
+        "data": verifik_data,
+        "error": None,
+        "estado": estado,
+        "discrepancias": discrepancias
+    }
+
+@app.post("/voters", response_model=SufraganteResponse)
+async def crear_sufragante(
+    sufragante_data: SufraganteCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Registrar nuevo sufragante. Los datos de Verifik y estado se envían desde el formulario
+    (tras haber hecho "Verificar"). Permite registrar aunque el estado sea inconsistente.
+    """
+    nombre_normalizado = normalizar_texto(sufragante_data.nombre)
+
+    existente = db.query(Sufragante).filter(Sufragante.cedula == sufragante_data.cedula).first()
+    if existente:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La cédula ya está registrada"
+        )
+
+    if sufragante_data.lider_id:
+        lider = db.query(Lider).filter(Lider.id == sufragante_data.lider_id, Lider.activo == True).first()
+        if not lider:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El líder especificado no existe o está inactivo"
+            )
+
+    discrepancias_json = None
+    if sufragante_data.discrepancias and sufragante_data.estado_validacion == "revision":
+        discrepancias_json = json.dumps(sufragante_data.discrepancias)
+
+    celular_val = None
+    if sufragante_data.celular and str(sufragante_data.celular).strip().upper() not in ("", "NO TIENE", "NO TIENE CELULAR"):
+        celular_val = sufragante_data.celular.strip()
+
+    nuevo_sufragante = Sufragante(
+        nombre=nombre_normalizado,
+        cedula=sufragante_data.cedula,
+        edad=sufragante_data.edad,
+        celular=celular_val,
+        direccion_residencia=sufragante_data.direccion_residencia,
+        genero="Otro" if (sufragante_data.genero or "").lower() == "otro" else (sufragante_data.genero or "M").upper(),
+        estado_validacion=sufragante_data.estado_validacion,
+        discrepancias_verifik=discrepancias_json,
+        lider_id=sufragante_data.lider_id,
+        usuario_registro=current_user.username,
+        departamento=normalizar_texto(sufragante_data.departamento) if sufragante_data.departamento else None,
+        municipio=normalizar_texto(sufragante_data.municipio) if sufragante_data.municipio else None,
+        lugar_votacion=normalizar_texto(sufragante_data.lugar_votacion) if sufragante_data.lugar_votacion else None,
+        mesa_votacion=normalizar_texto(sufragante_data.mesa_votacion) if sufragante_data.mesa_votacion else None,
+        direccion_puesto=sufragante_data.direccion_puesto or None
+    )
+
+    db.add(nuevo_sufragante)
+    db.commit()
+    db.refresh(nuevo_sufragante)
+
+    logger.info(f"Usuario {current_user.username} registró sufragante: {nuevo_sufragante.id}")
+
+    return nuevo_sufragante
+
+@app.get("/voters", response_model=List[SufraganteResponse])
+async def listar_sufragantes(
+    skip: int = 0,
+    limit: int = 100,
+    lider_id: Optional[int] = None,
+    estado: Optional[str] = None,
+    municipio: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Listar sufragantes con filtros
+    """
+    query = db.query(Sufragante)
+
+    if lider_id:
+        query = query.filter(Sufragante.lider_id == lider_id)
+    if estado:
+        query = query.filter(Sufragante.estado_validacion == estado)
+    if municipio:
+        query = query.filter(Sufragante.municipio == municipio.upper())
+
+    # Los operadores solo ven registros que ellos crearon
+    if current_user.rol == "operador":
+        query = query.filter(Sufragante.usuario_registro == current_user.username)
+
+    sufragantes = query.order_by(Sufragante.fecha_registro.desc()).offset(skip).limit(limit).all()
+    return sufragantes
+
+@app.get("/voters/{voter_id}", response_model=SufraganteResponse)
+async def obtener_sufragante(
+    voter_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Obtener detalles de un sufragante
+    """
+    sufragante = db.query(Sufragante).filter(Sufragante.id == voter_id).first()
+    if not sufragante:
+        raise HTTPException(status_code=404, detail="Sufragante no encontrado")
+
+    # Los operadores solo pueden ver sus propios registros
+    if current_user.rol == "operador" and sufragante.usuario_registro != current_user.username:
+        raise HTTPException(status_code=403, detail="No tiene acceso a este registro")
+
+    return sufragante
+
+@app.patch("/voters/{voter_id}", response_model=SufraganteResponse)
+async def actualizar_sufragante(
+    voter_id: int,
+    data: SufraganteUpdate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Actualizar datos de un sufragante (datos Verifik y/o estado de verificación).
+    Útil para corregir información en sufragantes "En revisión" y actualizar estado tras verificar.
+    """
+    sufragante = db.query(Sufragante).filter(Sufragante.id == voter_id).first()
+    if not sufragante:
+        raise HTTPException(status_code=404, detail="Sufragante no encontrado")
+
+    if current_user.rol == "operador" and sufragante.usuario_registro != current_user.username:
+        raise HTTPException(status_code=403, detail="No tiene acceso a este registro")
+
+    update = data.model_dump(exclude_unset=True)
+    if "departamento" in update:
+        sufragante.departamento = normalizar_texto(update["departamento"]) if update["departamento"] else None
+    if "municipio" in update:
+        sufragante.municipio = normalizar_texto(update["municipio"]) if update["municipio"] else None
+    if "lugar_votacion" in update:
+        sufragante.lugar_votacion = normalizar_texto(update["lugar_votacion"]) if update["lugar_votacion"] else None
+    if "mesa_votacion" in update:
+        sufragante.mesa_votacion = normalizar_texto(update["mesa_votacion"]) if update["mesa_votacion"] else None
+    if "direccion_puesto" in update:
+        sufragante.direccion_puesto = update["direccion_puesto"] or None
+    if "estado_validacion" in update:
+        sufragante.estado_validacion = update["estado_validacion"]
+    if "discrepancias" in update:
+        sufragante.discrepancias_verifik = json.dumps(update["discrepancias"]) if update["discrepancias"] else None
+
+    db.commit()
+    db.refresh(sufragante)
+    logger.info(f"Usuario {current_user.username} actualizó sufragante {sufragante.id}")
+    return sufragante
+
+# =====================
+# DASHBOARD Y REPORTES
+# =====================
+
+@app.get("/dashboard", response_model=DashboardMetrics)
+async def get_dashboard(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Obtener métricas del dashboard
+    """
+    # Contadores principales
+    total_lideres = db.query(func.count(Lider.id)).filter(Lider.activo == True).scalar()
+    total_sufragantes = db.query(func.count(Sufragante.id)).scalar()
+
+    # Estados de validación
+    verificados = db.query(func.count(Sufragante.id)).filter(Sufragante.estado_validacion == "verificado").scalar()
+    inconsistentes = db.query(func.count(Sufragante.id)).filter(Sufragante.estado_validacion == "inconsistente").scalar()
+    en_revision = db.query(func.count(Sufragante.id)).filter(Sufragante.estado_validacion == "revision").scalar()
+
+    # Registros por período
+    hoy = datetime.utcnow().date()
+    semana_inicio = hoy - timedelta(days=hoy.weekday())
+    mes_inicio = hoy.replace(day=1)
+
+    registros_hoy = db.query(func.count(Sufragante.id)).filter(
+        func.date(Sufragante.fecha_registro) == hoy
+    ).scalar()
+
+    registros_semana = db.query(func.count(Sufragante.id)).filter(
+        Sufragante.fecha_registro >= semana_inicio
+    ).scalar()
+
+    registros_mes = db.query(func.count(Sufragante.id)).filter(
+        Sufragante.fecha_registro >= mes_inicio
+    ).scalar()
+
+    return DashboardMetrics(
+        total_lideres=total_lideres or 0,
+        total_sufragantes=total_sufragantes or 0,
+        sufragantes_verificados=verificados or 0,
+        sufragantes_inconsistentes=inconsistentes or 0,
+        sufragantes_en_revision=en_revision or 0,
+        registros_hoy=registros_hoy or 0,
+        registros_semana=registros_semana or 0,
+        registros_mes=registros_mes or 0
+    )
+
+@app.get("/dashboard/municipios", response_model=List[SufraganteMunicipio])
+async def get_sufragantes_por_municipio(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Obtener distribución de sufragantes por municipio
+    """
+    resultados = db.query(
+        Sufragante.municipio,
+        func.count(Sufragante.id).label("total")
+    ).group_by(Sufragante.municipio).having(Sufragante.municipio != None).all()
+
+    return [
+        SufraganteMunicipio(municipio=row[0] or "Sin especificar", total=row[1])
+        for row in resultados
+    ]
+
+@app.get("/dashboard/lideres", response_model=List[SufragantePorLider])
+async def get_sufragantes_por_lider(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Obtener conteo de sufragantes por líder
+    """
+    resultados = db.query(
+        Lider.id,
+        Lider.nombre,
+        Lider.cedula,
+        func.count(Sufragante.id).label("total")
+    ).outerjoin(Sufragante, Lider.id == Sufragante.lider_id).group_by(Lider.id).all()
+
+    return [
+        SufragantePorLider(
+            lider_id=row[0],
+            lider_nombre=row[1],
+            lider_cedula=row[2],
+            total_sufragantes=row[3] or 0
+        )
+        for row in resultados
+    ]
+
+@app.get("/dashboard/operadores")
+async def get_registros_por_operador(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Obtener conteo de registros por operador
+    """
+    resultados = db.query(
+        Sufragante.usuario_registro,
+        func.count(Sufragante.id).label("total")
+    ).group_by(Sufragante.usuario_registro).all()
+
+    return [{"operador": row[0] or "Sin usuario", "total": row[1]} for row in resultados]
+
+@app.get("/dashboard/tendencia")
+async def get_tendencia_registros(
+    dias: int = 30,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Obtener tendencia de registros por día
+    """
+    from sqlalchemy import text
+
+    resultados = db.query(
+        func.date(Sufragante.fecha_registro).label("fecha"),
+        func.count(Sufragante.id).label("total")
+    ).filter(
+        Sufragante.fecha_registro >= datetime.utcnow() - timedelta(days=dias)
+    ).group_by(func.date(Sufragante.fecha_registro)).order_by("fecha").all()
+
+    return [{"fecha": str(row[0]), "total": row[1]} for row in resultados]
+
+@app.get("/export/xlsx")
+async def export_excel(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Exportar todos los datos a Excel
+    """
+    # Obtener todos los sufragantes con información de líder
+    sufragantes = db.query(Sufragante).order_by(Sufragante.fecha_registro.desc()).all()
+
+    # Crear workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Sufragantes"
+
+    # Headers
+    headers = [
+        "ID", "Nombre", "Cédula", "Edad", "Celular", "Dirección Residencia",
+        "Género", "Departamento", "Municipio", "Lugar Votación", "Mesa",
+        "Dirección Puesto", "Estado Validación", "Líder ID", "Usuario Registro",
+        "Fecha Registro"
+    ]
+
+    for col, header in enumerate(headers, 1):
+        ws.cell(row=1, column=col, value=header)
+
+    # Datos
+    for row_idx, s in enumerate(sufragantes, 2):
+        ws.cell(row=row_idx, column=1, value=s.id)
+        ws.cell(row=row_idx, column=2, value=s.nombre)
+        ws.cell(row=row_idx, column=3, value=s.cedula)
+        ws.cell(row=row_idx, column=4, value=s.edad)
+        ws.cell(row=row_idx, column=5, value=s.celular)
+        ws.cell(row=row_idx, column=6, value=s.direccion_residencia)
+        ws.cell(row=row_idx, column=7, value=s.genero)
+        ws.cell(row=row_idx, column=8, value=s.departamento)
+        ws.cell(row=row_idx, column=9, value=s.municipio)
+        ws.cell(row=row_idx, column=10, value=s.lugar_votacion)
+        ws.cell(row=row_idx, column=11, value=s.mesa_votacion)
+        ws.cell(row=row_idx, column=12, value=s.direccion_puesto)
+        ws.cell(row=row_idx, column=13, value=s.estado_validacion)
+        ws.cell(row=row_idx, column=14, value=s.lider_id)
+        ws.cell(row=row_idx, column=15, value=s.usuario_registro)
+        ws.cell(row=row_idx, column=16, value=s.fecha_registro.isoformat() if s.fecha_registro else None)
+
+    # Sheet para líderes
+    ws2 = wb.create_sheet("Líderes")
+    lideres = db.query(Lider).order_by(Lider.nombre).all()
+
+    headers_lideres = [
+        "ID", "Nombre", "Cédula", "Edad", "Celular", "Dirección",
+        "Género", "Departamento", "Municipio", "Barrio", "Zona Influencia",
+        "Tipo Liderazgo", "Usuario Registro", "Fecha Registro", "Activo"
+    ]
+
+    for col, header in enumerate(headers_lideres, 1):
+        ws2.cell(row=1, column=col, value=header)
+
+    for row_idx, l in enumerate(lideres, 2):
+        ws2.cell(row=row_idx, column=1, value=l.id)
+        ws2.cell(row=row_idx, column=2, value=l.nombre)
+        ws2.cell(row=row_idx, column=3, value=l.cedula)
+        ws2.cell(row=row_idx, column=4, value=l.edad)
+        ws2.cell(row=row_idx, column=5, value=l.celular)
+        ws2.cell(row=row_idx, column=6, value=l.direccion)
+        ws2.cell(row=row_idx, column=7, value=l.genero)
+        ws2.cell(row=row_idx, column=8, value=l.departamento)
+        ws2.cell(row=row_idx, column=9, value=l.municipio)
+        ws2.cell(row=row_idx, column=10, value=l.barrio)
+        ws2.cell(row=row_idx, column=11, value=l.zona_influencia)
+        ws2.cell(row=row_idx, column=12, value=l.tipo_liderazgo)
+        ws2.cell(row=row_idx, column=13, value=l.usuario_registro)
+        ws2.cell(row=row_idx, column=14, value=l.fecha_registro.isoformat() if l.fecha_registro else None)
+        ws2.cell(row=row_idx, column=15, value="Sí" if l.activo else "No")
+
+    # Guardar en buffer
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    logger.info(f"Superadmin {current_user.username} exportó datos a Excel")
+
+    return FileResponse(
+        path=None,
+        content=buffer.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename=f"exportacion_innovabigdata_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    )
+
+# =====================
+# SALUD DE LA APLICACIÓN
+# =====================
+
+@app.get("/health")
+async def health_check():
+    """
+    Endpoint de verificación de salud
+    """
+    try:
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e)}
+
+@app.get("/")
+async def root():
+    """
+    Endpoint raíz
+    """
+    return {
+        "message": "API Sistema de Registro de Líderes y Sufragantes",
+        "version": "1.0.0",
+        "status": "operational"
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
