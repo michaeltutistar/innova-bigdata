@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sistema electoral — Dashboard</title>
+
+  <!-- Bootstrap 5 + Icons -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <!-- Tipografía (Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- CSS Proyecto -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body class="se-body se-dash" data-theme="dark">
+  <div class="se-bg" aria-hidden="true"></div>
+
+  <!-- Topbar -->
+  <header class="se-topbar">
+    <div class="se-topbar-left">
+      <button class="se-iconbtn se-only-mobile" id="btnOpenNav" aria-label="Abrir menú">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <div class="se-brand">
+        <img src="assets/img/francisco-fajardo-abogados-pasto.png" class="se-brand-logo" alt="Logo">
+        <div class="se-brand-text">
+          <div class="se-brand-title">Sistema Electoral</div>
+          <div class="se-brand-sub">Dashboard • Insights</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="se-topbar-center">
+      <div class="se-headline">
+        <div class="se-headline-k">Qué está pasando hoy</div>
+        <div class="se-headline-v">
+          <span class="se-dot" id="moodDot"></span>
+          <span id="headlineTxt">Calma operativa: registros estables y sin incidencias críticas.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="se-topbar-right">
+      <div class="se-quick">
+        <button class="se-chipbtn" id="btnQuickFilter" type="button">
+          <i class="bi bi-sliders me-2"></i> Filtro inteligente
+        </button>
+      </div>
+
+      <div class="dropdown">
+        <button class="se-iconbtn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menú">
+          <i class="bi bi-gear"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end se-dd">
+          <li><button class="dropdown-item se-dd-item" type="button" id="btnToggleTheme"><i class="bi bi-moon-stars me-2"></i>Modo oscuro</button></li>
+          <li><button class="dropdown-item se-dd-item" type="button"><i class="bi bi-shield-lock me-2"></i>Seguridad</button></li>
+          <li><hr class="dropdown-divider se-dd-div"></li>
+          <li><a class="dropdown-item se-dd-item" href="login.html"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</a></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <!-- Overlay + Drawer (móvil/tablet) -->
+  <div class="se-nav-overlay" id="navOverlay" aria-hidden="true"></div>
+
+  <aside class="se-nav" id="sideNav" aria-label="Menú lateral">
+    <div class="se-nav-head">
+      <div class="se-nav-title">Detalles bajo demanda</div>
+      <button class="se-iconbtn" id="btnCloseNav" aria-label="Cerrar menú">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div id="seNavGroups">
+      <nav class="se-nav-links">
+
+        <!-- Visión general -->
+        <button class="se-nav-link is-active" data-view="overview">
+          <i class="bi bi-grid-1x2 me-2"></i> Visión general
+        </button>
+
+        <!-- Líderes con submenú -->
+        <button class="se-nav-link se-nav-parent" data-bs-toggle="collapse" data-bs-target="#subLideres" aria-expanded="true">
+          <i class="bi bi-person-badge me-2"></i> Líderes
+          <span class="se-nav-caret"><i class="bi bi-chevron-down"></i></span>
+        </button>
+
+        <div class="collapse se-nav-sub" id="subLideres" data-bs-parent="#seNavGroups">
+          <button class="se-nav-sublink" data-view="lideres_rank">
+            <i class="bi bi-trophy me-2"></i> Ranking Top 5
+            <span class="se-pill">PRO</span>
+          </button>
+          <button class="se-nav-sublink" data-view="lideres_riesgo">
+            <i class="bi bi-exclamation-diamond me-2"></i> Líder en riesgo
+            <span class="se-pill se-pill-warn">ALERTA</span>
+          </button>
+          <button class="se-nav-sublink" data-view="lideres_referidos">
+            <i class="bi bi-people-fill me-2"></i> Más referidos
+            <span class="se-pill se-pill-accent">TOP</span>
+          </button>
+        </div>
+
+        <!-- Sufragantes con submenú -->
+        <button class="se-nav-link se-nav-parent" data-bs-toggle="collapse" data-bs-target="#subSufragantes" aria-expanded="false" data-bs-parent="#seNavGroups">
+          <i class="bi bi-people me-2"></i> Sufragantes
+          <span class="se-nav-caret"><i class="bi bi-chevron-down"></i></span>
+        </button>
+
+        <div class="collapse se-nav-sub" id="subSufragantes">
+          <button class="se-nav-sublink" data-view="sufragantes_hoy">
+            <i class="bi bi-clock-history me-2"></i> Captura hoy
+          </button>
+          <button class="se-nav-sublink" data-view="sufragantes_zonas">
+            <i class="bi bi-geo-alt me-2"></i> Zonas
+          </button>
+        </div>
+
+        <!-- Incidencias -->
+        <button class="se-nav-link" data-view="incidencias">
+          <i class="bi bi-exclamation-triangle me-2"></i> Incidencias
+        </button>
+
+        <!-- Reportes -->
+        <button class="se-nav-link se-nav-parent" data-bs-toggle="collapse" data-bs-target="#subReportes" aria-expanded="false" data-bs-parent="#seNavGroups">
+          <i class="bi bi-file-earmark-bar-graph me-2"></i> Reportes
+          <span class="se-nav-caret"><i class="bi bi-chevron-down"></i></span>
+        </button>
+
+        <div class="collapse se-nav-sub" id="subReportes">
+          <button class="se-nav-sublink" data-view="reportes_export">
+            <i class="bi bi-download me-2"></i> Exportar
+          </button>
+          <button class="se-nav-sublink" data-view="reportes_audit">
+            <i class="bi bi-shield-check me-2"></i> Auditoría
+          </button>
+        </div>
+      </nav>
+    </div>
+
+    <div class="se-nav-foot">
+      <div class="se-ai-mini">
+        <div class="se-ai-k"><i class="bi bi-stars me-2"></i>Resumen IA</div>
+        <div class="se-ai-v" id="aiSummary">
+          Hoy el sistema muestra estabilidad. El líder con mejor ritmo de crecimiento supera la media sin aumentar incidencias.
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="se-main">
+    <div class="se-grid">
+
+      <!-- HERO insight -->
+      <section class="se-hero">
+        <div class="se-hero-top">
+          <div>
+            <div class="se-hero-k">Insight principal</div>
+            <div class="se-hero-v">
+              <span class="se-num" id="kpiTotal">12,480</span>
+              <span class="se-unit">registros</span>
+            </div>
+            <div class="se-hero-sub">
+              Tendencia <span class="se-soft" id="kpiTrend">+4.2%</span> vs. ayer • Calidad <span class="se-soft" id="kpiQuality">Alta</span>
+            </div>
+          </div>
+
+          <div class="se-hero-actions">
+            <button class="se-chipbtn" id="btnExport">
+              <i class="bi bi-download me-2"></i> Exportar
+            </button>
+            <button class="se-chipbtn" id="btnRefresh">
+              <i class="bi bi-arrow-clockwise me-2"></i> Actualizar
+            </button>
+          </div>
+        </div>
+
+        <!-- Chart principal (1) -->
+        <div class="se-chart-wrap">
+          <canvas id="chartMain" height="110"></canvas>
+        </div>
+      </section>
+
+      <!-- KPIs minimalistas -->
+      <section class="se-kpis">
+        <div class="se-cardx se-kpi">
+          <div class="se-kpi-top">
+            <div class="se-kpi-k">Líder top</div>
+            <div class="se-kpi-badge" id="badgeMood"><i class="bi bi-emoji-smile me-1"></i> Calma</div>
+          </div>
+          <div class="se-kpi-v" id="kpiLeader">LDR-0001</div>
+          <div class="se-kpi-sub">Meta: 1000 • Registrados hoy: <span class="se-soft" id="kpiLeaderToday">86</span></div>
+          <div class="se-spark">
+            <canvas id="spark1" height="42"></canvas>
+          </div>
+        </div>
+
+        <div class="se-cardx se-kpi">
+          <div class="se-kpi-top">
+            <div class="se-kpi-k">Incidencias</div>
+            <div class="se-kpi-mini" id="kpiIncMini">Bajas</div>
+          </div>
+          <div class="se-kpi-v"><span id="kpiInc">2</span></div>
+          <div class="se-kpi-sub">Últimas 24h • Señales discretas</div>
+          <div class="se-spark">
+            <canvas id="spark2" height="42"></canvas>
+          </div>
+        </div>
+
+        <div class="se-cardx se-kpi">
+          <div class="se-kpi-top">
+            <div class="se-kpi-k">Conversión</div>
+            <div class="se-kpi-mini" id="kpiConvMini">Optimizada</div>
+          </div>
+          <div class="se-kpi-v"><span id="kpiConv">71%</span></div>
+          <div class="se-kpi-sub">Líder → Sufragante</div>
+          <!-- Gráfico 3 (Donut) -->
+          <div class="se-donut">
+            <canvas id="chartDonut" height="120"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel bajo demanda (detalles contextuales) -->
+      <section class="se-detail">
+        <div class="se-cardx se-detail-card">
+          <div class="se-detail-head">
+            <div>
+              <div class="se-detail-k">Detalles contextuales</div>
+              <div class="se-detail-v" id="detailTitle">Visión general</div>
+            </div>
+
+            <div class="se-detail-actions">
+              <button class="se-iconbtn" id="btnHint" aria-label="Sugerencia">
+                <i class="bi bi-lightning-charge"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="se-detail-body">
+            <div class="se-list" id="detailList">
+              <!-- JS llena -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <footer class="se-footer">
+      <span>© <span id="yearNow"></span> Sistema electoral</span>
+      <span class="se-soft">• Minimal intelligence dashboard</span>
+    </footer>
+  </main>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

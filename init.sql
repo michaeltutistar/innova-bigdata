@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS usuarios (
     rol VARCHAR(20) NOT NULL CHECK (rol IN ('superadmin', 'operador')),
     activo BOOLEAN DEFAULT true,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ultimo_login TIMESTAMP
+    ultimo_login TIMESTAMP,
+    reset_token VARCHAR(64),
+    reset_token_expires TIMESTAMP
 );
 
 -- Tabla: lideres
@@ -40,7 +42,7 @@ CREATE TABLE IF NOT EXISTS sufragantes (
     edad INT NOT NULL CHECK (edad >= 18 AND edad <= 120),
     celular VARCHAR(10) NULL,
     direccion_residencia TEXT NOT NULL,
-    genero VARCHAR(10) NOT NULL CHECK (genero IN ('M', 'F', 'Otro')),
+    genero VARCHAR(10) NULL CHECK (genero IS NULL OR genero IN ('M', 'F', 'Otro')),
 
     -- Datos de Verifik (solo lectura)
     departamento TEXT,

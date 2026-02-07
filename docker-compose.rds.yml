@@ -1,0 +1,43 @@
+# Producción AWS EC2 con RDS (PostgreSQL externo)
+# Uso: docker compose -f docker-compose.rds.yml up -d
+# Variables en .env (DATABASE_URL debe apuntar al endpoint RDS)
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: innovabigdata-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-240}
+      - VERIFIK_API_URL=${VERIFIK_API_URL}
+      - VERIFIK_TOKEN=${VERIFIK_TOKEN}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - HOST=${HOST:-0.0.0.0}
+      - PORT=${PORT:-8000}
+    restart: unless-stopped
+    volumes:
+      - backend_data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: innovabigdata-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend_data:
+
+networks:
+  default:
+    name: innovabigdata-network

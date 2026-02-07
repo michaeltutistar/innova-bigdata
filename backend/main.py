@@ -5,14 +5,15 @@ Backend con FastAPI - API REST para gestión de datos electorales
 
 import os
 import logging
+import secrets
 from datetime import datetime, timedelta
 from typing import List, Optional
 import json
-from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Query
+from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Query, UploadFile, File, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, ForeignKey, func, text
+from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, ForeignKey, func, text, case
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session
 from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel, Field, field_validator
@@ -65,6 +66,8 @@ class Usuario(Base):
     activo = Column(Boolean, default=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
     ultimo_login = Column(DateTime)
+    reset_token = Column(String(64), nullable=True, index=True)
+    reset_token_expires = Column(DateTime, nullable=True)
 
 class Lider(Base):
     __tablename__ = "lideres"
@@ -96,7 +99,7 @@ class Sufragante(Base):
     edad = Column(Integer, nullable=False)
     celular = Column(String(10), nullable=True)  # Opcional: "No tiene"
     direccion_residencia = Column(Text, nullable=False)
-    genero = Column(String(10), nullable=False)
+    genero = Column(String(10), nullable=True)  # NULL para registro masivo (Excel sin género)
 
     # Datos de Verifik
     departamento = Column(Text)
@@ -144,9 +147,20 @@ class UsuarioResponse(BaseModel):
     rol: str
     activo: bool
     fecha_creacion: datetime
+    ultimo_login: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+class UsuarioUpdateActivo(BaseModel):
+    activo: bool
+
+class ForgotPasswordRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(..., min_length=32)
+    new_password: str = Field(..., min_length=6)
 
 class LiderCreate(BaseModel):
     nombre: str = Field(..., min_length=2, max_length=200)
@@ -203,7 +217,7 @@ class SufraganteCreate(BaseModel):
     edad: int = Field(..., ge=18, le=120)
     celular: Optional[str] = None  # Opcional: null o vacío = "No tiene"; si se envía debe ser 10 dígitos y empezar por 3
     direccion_residencia: str = Field(..., min_length=5, max_length=500)
-    genero: str = Field(..., pattern="^(M|F|Otro)$")
+    genero: Optional[str] = Field(None, pattern="^(M|F|Otro)$")  # None en registro masivo (Excel)
     lider_id: Optional[int] = None
     # Datos de Verifik (ingresados manualmente)
     departamento: Optional[str] = None
@@ -237,7 +251,7 @@ class SufraganteResponse(BaseModel):
     edad: int
     celular: Optional[str] = None
     direccion_residencia: str
-    genero: str
+    genero: Optional[str] = None
     departamento: Optional[str]
     municipio: Optional[str]
     lugar_votacion: Optional[str]
@@ -268,6 +282,7 @@ class DashboardMetrics(BaseModel):
     sufragantes_verificados: int
     sufragantes_inconsistentes: int
     sufragantes_en_revision: int
+    sufragantes_sin_verificar: int
     registros_hoy: int
     registros_semana: int
     registros_mes: int
@@ -281,6 +296,10 @@ class SufragantePorLider(BaseModel):
     lider_nombre: str
     lider_cedula: str
     total_sufragantes: int
+    verificados: int = 0
+    sin_verificar: int = 0
+    en_revision: int = 0
+    inconsistentes: int = 0
 
 class ExportRequest(BaseModel):
     formato: str = Field(..., pattern="^(xlsx)$")
@@ -353,6 +372,15 @@ def normalizar_texto(texto: str) -> str:
     if texto:
         return " ".join(texto.upper().split())
     return texto
+
+def normalizar_genero(g: Optional[str]) -> Optional[str]:
+    """Normaliza género para BD; None si no se envía (registro masivo)."""
+    if g is None or (isinstance(g, str) and not g.strip()):
+        return None
+    g = g.strip()
+    if g.lower() == "otro":
+        return "Otro"
+    return g.upper() if g in ("M", "F") else None
 
 # =====================
 # API VERIFIK
@@ -552,8 +580,31 @@ def startup_add_discrepancias_column():
                     conn.execute(text("ALTER TABLE sufragantes ADD CONSTRAINT sufragantes_estado_validacion_check CHECK (estado_validacion IN ('verificado', 'inconsistente', 'revision', 'sin_verificar'))"))
                 except Exception:
                     pass
+                conn.execute(text("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token VARCHAR(64)"))
+                conn.execute(text("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP"))
+            try:
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_usuarios_reset_token ON usuarios(reset_token)"))
+            except Exception:
+                pass
+            try:
+                with conn.begin():
+                    # Buscar el nombre real del constraint CHECK de genero (puede variar según cómo se creó la tabla)
+                    r = conn.execute(text("""
+                        SELECT c.conname FROM pg_constraint c
+                        JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY(c.conkey) AND NOT a.attisdropped
+                        WHERE c.conrelid = 'sufragantes'::regclass AND c.contype = 'c' AND a.attname = 'genero'
+                    """))
+                    names = [row[0] for row in r]
+                    for name in names:
+                        conn.execute(text(f'ALTER TABLE sufragantes DROP CONSTRAINT IF EXISTS "{name}"'))
+                    conn.execute(text("ALTER TABLE sufragantes DROP CONSTRAINT IF EXISTS sufragantes_genero_check"))
+                    conn.execute(text("ALTER TABLE sufragantes ALTER COLUMN genero DROP NOT NULL"))
+                    conn.execute(text("ALTER TABLE sufragantes ADD CONSTRAINT sufragantes_genero_check CHECK (genero IS NULL OR genero IN ('M', 'F', 'Otro'))"))
+                logger.info("Migración: columna sufragantes.genero permitida como NULL")
+            except Exception as e:
+                logger.warning(f"Migración genero (puede estar ya aplicada): {e}")
     except Exception as e:
-        logger.warning(f"Startup: no se pudo añadir columna discrepancias_verifik (puede existir ya): {e}")
+        logger.warning(f"Startup: no se pudo añadir columnas (puede existir ya): {e}")
 
 # =====================
 # RUTAS DE AUTENTICACIÓN
@@ -644,6 +695,92 @@ async def get_current_user_info(current_user: TokenData = Depends(get_current_us
     usuario = db.query(Usuario).filter(Usuario.username == current_user.username).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return usuario
+
+RESET_TOKEN_EXPIRE_HOURS = 1
+
+@app.post("/auth/forgot-password")
+async def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Solicitar restablecimiento de contraseña. Solo operadores.
+    Devuelve un token para usar en /auth/reset-password (válido 1 hora).
+    El enlace debe abrirse en el navegador para definir la nueva contraseña.
+    """
+    usuario = db.query(Usuario).filter(Usuario.username == body.username.strip()).first()
+    if not usuario:
+        # No revelar si el usuario existe
+        return {"success": True, "message": "Si el usuario es un operador, use el enlace que se mostrará."}
+    if usuario.rol != "operador":
+        return {"success": True, "message": "La recuperación de contraseña solo está disponible para operadores."}
+    if not usuario.activo:
+        return {"success": True, "message": "Si el usuario es un operador, use el enlace que se mostrará."}
+    token = secrets.token_urlsafe(32)
+    usuario.reset_token = token
+    usuario.reset_token_expires = datetime.utcnow() + timedelta(hours=RESET_TOKEN_EXPIRE_HOURS)
+    db.commit()
+    return {
+        "success": True,
+        "reset_token": token,
+        "expires_in_hours": RESET_TOKEN_EXPIRE_HOURS,
+        "message": "Use el enlace generado para restablecer la contraseña (válido 1 hora)."
+    }
+
+@app.post("/auth/reset-password")
+async def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Restablecer contraseña con el token recibido en forgot-password.
+    """
+    usuario = db.query(Usuario).filter(
+        Usuario.reset_token == body.token,
+        Usuario.reset_token_expires > datetime.utcnow()
+    ).first()
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Enlace inválido o expirado. Solicite uno nuevo desde «Olvidé mi contraseña»."
+        )
+    usuario.password_hash = get_password_hash(body.new_password)
+    usuario.reset_token = None
+    usuario.reset_token_expires = None
+    db.commit()
+    return {"success": True, "message": "Contraseña actualizada. Ya puede iniciar sesión."}
+
+@app.get("/users", response_model=List[UsuarioResponse])
+async def listar_usuarios(
+    rol: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Listar usuarios (solo superadmin). Por defecto lista operadores; rol=superadmin para ver todos.
+    """
+    query = db.query(Usuario)
+    if rol:
+        query = query.filter(Usuario.rol == rol)
+    else:
+        query = query.filter(Usuario.rol == "operador")
+    usuarios = query.order_by(Usuario.fecha_creacion.desc()).all()
+    return usuarios
+
+@app.patch("/users/{user_id}", response_model=UsuarioResponse)
+async def actualizar_usuario_activo(
+    user_id: int,
+    data: UsuarioUpdateActivo,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Activar o desactivar un usuario (solo superadmin). No se puede desactivar a sí mismo.
+    """
+    usuario = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if usuario.username == current_user.username:
+        raise HTTPException(status_code=400, detail="No puede desactivar su propio usuario")
+    usuario.activo = data.activo
+    db.commit()
+    db.refresh(usuario)
+    logger.info(f"Usuario {current_user.username} actualizó activo={data.activo} para {usuario.username}")
     return usuario
 
 # =====================
@@ -892,7 +1029,7 @@ async def crear_sufragante(
         edad=sufragante_data.edad,
         celular=celular_val,
         direccion_residencia=sufragante_data.direccion_residencia,
-        genero="Otro" if (sufragante_data.genero or "").lower() == "otro" else (sufragante_data.genero or "M").upper(),
+        genero=normalizar_genero(sufragante_data.genero),
         estado_validacion=sufragante_data.estado_validacion,
         discrepancias_verifik=discrepancias_json,
         lider_id=sufragante_data.lider_id,
@@ -999,6 +1136,185 @@ async def actualizar_sufragante(
     logger.info(f"Usuario {current_user.username} actualizó sufragante {sufragante.id}")
     return sufragante
 
+def _normalize_header(h: str) -> str:
+    """Normaliza nombre de columna para comparación (sin acentos, mayúsculas, sin espacios dobles)."""
+    if h is None:
+        return ""
+    s = str(h).strip().upper().replace("  ", " ").replace("É", "E").replace("Í", "I").replace("Ó", "O").replace("Ú", "U").replace("Á", "A")
+    return s
+
+def _col_index(header_row: list, names: list, default: int) -> int:
+    """Devuelve el índice de la primera columna cuyo encabezado coincida con alguno de names."""
+    for i, cell in enumerate(header_row):
+        if i >= 50:
+            break
+        h = _normalize_header(cell)
+        for n in names:
+            if n in h or h in n:
+                return i
+    return default
+
+def _parse_excel_masivo(contents: bytes) -> List[dict]:
+    """
+    Parsea Excel de registro masivo. Detecta columnas por nombre de encabezado (primera fila).
+    NOMBRES Y APELLIDOS, CÉDULA, EDAD, CELULAR, DIRECCION, QUIEN REFIERE (se ignora),
+    DEPARTAMENTO, MUNICIPIO, LUGAR DE VOTACION, MESA DE VOTACION.
+    """
+    wb = openpyxl.load_workbook(BytesIO(contents), read_only=True, data_only=True)
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    if not rows:
+        return []
+    header_row = list(rows[0]) if rows else []
+    # Detección por nombre para soportar columnas en distinto orden o columna extra al inicio
+    idx_nombre = _col_index(header_row, ["NOMBRES Y APELLIDOS", "NOMBRE"], 0)
+    idx_cedula = _col_index(header_row, ["CEDULA", "CÉDULA"], 1)
+    idx_edad = _col_index(header_row, ["EDAD"], 2)
+    idx_celular = _col_index(header_row, ["CELULAR"], 3)
+    idx_direccion = _col_index(header_row, ["DIRECCION", "DIRECCIÓN"], 4)
+    idx_dep = _col_index(header_row, ["DEPARTAMENTO"], 6)
+    idx_mun = _col_index(header_row, ["MUNICIPIO"], 7)
+    idx_lugar = _col_index(header_row, ["LUGAR DE VOTACION", "LUGAR VOTACION"], 8)
+    idx_mesa = _col_index(header_row, ["MESA DE VOTACION", "MESA VOTACION"], 9)
+    out = []
+    for row_idx, row in enumerate(rows[1:], start=2):
+        if not row or all(c is None or (isinstance(c, str) and not str(c).strip()) for c in row):
+            continue
+        row = list(row)
+        nombre = (row[idx_nombre] or "").strip() if idx_nombre < len(row) else ""
+        cedula_raw = row[idx_cedula] if idx_cedula < len(row) else None
+        if cedula_raw is not None and isinstance(cedula_raw, (int, float)):
+            cedula = str(int(cedula_raw))
+        else:
+            cedula = (str(cedula_raw or "").strip().replace(" ", "").replace(".", "") if cedula_raw is not None else "") or ""
+        edad_val = row[idx_edad] if idx_edad < len(row) else None
+        if isinstance(edad_val, float) and edad_val == int(edad_val):
+            edad_val = int(edad_val)
+        celular_raw = row[idx_celular] if idx_celular < len(row) else None
+        if celular_raw is not None and isinstance(celular_raw, (int, float)):
+            celular = str(int(celular_raw)) if celular_raw else ""
+        else:
+            celular = (str(celular_raw or "").strip().replace(" ", "") if celular_raw is not None else "") or ""
+        direccion = (str(row[idx_direccion] or "").strip() if idx_direccion < len(row) else "") or ""
+        dep = (str(row[idx_dep] or "").strip() if idx_dep < len(row) else "") or ""
+        mun = (str(row[idx_mun] or "").strip() if idx_mun < len(row) else "") or ""
+        lugar = (str(row[idx_lugar] or "").strip() if idx_lugar < len(row) else "") or ""
+        mesa = (str(row[idx_mesa] or "").strip() if idx_mesa < len(row) else "") or ""
+        try:
+            edad = int(edad_val) if edad_val is not None else None
+        except (TypeError, ValueError):
+            edad = None
+        out.append({
+            "row": row_idx,
+            "nombre": nombre,
+            "cedula": cedula,
+            "edad": edad,
+            "celular": celular or None,
+            "direccion_residencia": direccion,
+            "departamento": dep or None,
+            "municipio": mun or None,
+            "lugar_votacion": lugar or None,
+            "mesa_votacion": mesa or None,
+        })
+    return out
+
+@app.post("/voters/upload")
+async def upload_sufragantes_masivo(
+    file: UploadFile = File(...),
+    lider_id: int = Form(...),
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Registro masivo de sufragantes desde Excel. Seleccionar líder y adjuntar archivo.
+    Columnas: NOMBRES Y APELLIDOS, CÉDULA, EDAD, CELULAR, DIRECCION (residencia), DEPARTAMENTO, MUNICIPIO, LUGAR DE VOTACION, MESA DE VOTACION.
+    LUGAR DE VOTACION y MESA DE VOTACION pueden ir vacíos. QUIEN REFIERE se ignora. Género queda null. Estado: sin_verificar.
+    """
+    try:
+        if not file.filename or not file.filename.lower().endswith((".xlsx", ".xls")):
+            raise HTTPException(status_code=400, detail="Debe adjuntar un archivo Excel (.xlsx o .xls)")
+        contents = await file.read()
+        if len(contents) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="El archivo no debe superar 10 MB")
+        lider = db.query(Lider).filter(Lider.id == lider_id, Lider.activo == True).first()
+        if not lider:
+            raise HTTPException(status_code=400, detail="El líder seleccionado no existe o está inactivo")
+        rows = _parse_excel_masivo(contents)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Error en upload masivo (lectura/parseo)")
+        raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {str(e)}")
+    if not rows:
+        return {"created": 0, "errors": ["El archivo no tiene filas de datos o el formato no es válido."]}
+    created = 0
+    errors = []
+    for r in rows:
+        nombre = (r.get("nombre") or "").strip()
+        cedula = (r.get("cedula") or "").strip()
+        edad = r.get("edad")
+        direccion = (r.get("direccion_residencia") or "").strip()
+        if not nombre or len(nombre) < 2:
+            errors.append(f"Fila {r['row']}: nombre inválido")
+            continue
+        if not cedula or len(cedula) < 6 or not cedula.isdigit():
+            errors.append(f"Fila {r['row']}: cédula inválida (6-10 dígitos)")
+            continue
+        if edad is None or edad < 18 or edad > 120:
+            errors.append(f"Fila {r['row']}: edad debe estar entre 18 y 120")
+            continue
+        if not direccion or len(direccion) < 5:
+            errors.append(f"Fila {r['row']}: dirección de residencia inválida")
+            continue
+        celular = r.get("celular")
+        if celular:
+            celular = str(celular).strip()
+            if len(celular) != 10 or not celular.isdigit() or celular[0] != "3":
+                errors.append(f"Fila {r['row']}: celular debe ser 10 dígitos e iniciar por 3 (o vacío)")
+                continue
+        else:
+            celular = None
+        if db.query(Sufragante).filter(Sufragante.cedula == cedula).first():
+            errors.append(f"Fila {r['row']}: cédula {cedula} ya registrada")
+            continue
+        nombre_norm = normalizar_texto(nombre)
+        # Lugar y mesa pueden venir vacíos en el Excel; guardar como None
+        lugar_val = (r.get("lugar_votacion") or "").strip() if r.get("lugar_votacion") is not None else ""
+        mesa_val = (r.get("mesa_votacion") or "").strip() if r.get("mesa_votacion") is not None else ""
+        try:
+            suf = Sufragante(
+                nombre=nombre_norm,
+                cedula=cedula,
+                edad=edad,
+                celular=celular or None,
+                direccion_residencia=direccion[:500],
+                genero=None,
+                estado_validacion="sin_verificar",
+                discrepancias_verifik=None,
+                lider_id=lider_id,
+                usuario_registro=current_user.username,
+                departamento=normalizar_texto(r["departamento"]) if (r.get("departamento") or "").strip() else None,
+                municipio=normalizar_texto(r["municipio"]) if (r.get("municipio") or "").strip() else None,
+                lugar_votacion=normalizar_texto(lugar_val) if lugar_val else None,
+                mesa_votacion=mesa_val or None,
+                direccion_puesto=None
+            )
+            db.add(suf)
+            db.commit()
+            created += 1
+        except IntegrityError as e:
+            db.rollback()
+            err_msg = str(e.orig) if getattr(e, "orig", None) else str(e)
+            if "cedula" in err_msg.lower() or "unique" in err_msg.lower():
+                errors.append(f"Fila {r['row']}: cédula {cedula} ya registrada")
+            else:
+                errors.append(f"Fila {r['row']}: error de BD - {err_msg[:100]}")
+        except Exception as e:
+            db.rollback()
+            logger.exception("Error creando sufragante en carga masiva")
+            errors.append(f"Fila {r['row']}: {str(e)}")
+    return {"created": created, "errors": errors, "total_rows": len(rows)}
+
 # =====================
 # DASHBOARD Y REPORTES
 # =====================
@@ -1019,6 +1335,7 @@ async def get_dashboard(
     verificados = db.query(func.count(Sufragante.id)).filter(Sufragante.estado_validacion == "verificado").scalar()
     inconsistentes = db.query(func.count(Sufragante.id)).filter(Sufragante.estado_validacion == "inconsistente").scalar()
     en_revision = db.query(func.count(Sufragante.id)).filter(Sufragante.estado_validacion == "revision").scalar()
+    sin_verificar = db.query(func.count(Sufragante.id)).filter(Sufragante.estado_validacion == "sin_verificar").scalar()
 
     # Registros por período
     hoy = datetime.utcnow().date()
@@ -1043,6 +1360,7 @@ async def get_dashboard(
         sufragantes_verificados=verificados or 0,
         sufragantes_inconsistentes=inconsistentes or 0,
         sufragantes_en_revision=en_revision or 0,
+        sufragantes_sin_verificar=sin_verificar or 0,
         registros_hoy=registros_hoy or 0,
         registros_semana=registros_semana or 0,
         registros_mes=registros_mes or 0
@@ -1072,13 +1390,17 @@ async def get_sufragantes_por_lider(
     current_user: TokenData = Depends(require_superadmin)
 ):
     """
-    Obtener conteo de sufragantes por líder
+    Obtener conteo de sufragantes por líder con desglose por estado (verificado, sin verificar, en revisión, inconsistente).
     """
     resultados = db.query(
         Lider.id,
         Lider.nombre,
         Lider.cedula,
-        func.count(Sufragante.id).label("total")
+        func.count(Sufragante.id).label("total"),
+        func.count(case((Sufragante.estado_validacion == "verificado", 1), else_=None)).label("verificados"),
+        func.count(case((Sufragante.estado_validacion == "sin_verificar", 1), else_=None)).label("sin_verificar"),
+        func.count(case((Sufragante.estado_validacion == "revision", 1), else_=None)).label("en_revision"),
+        func.count(case((Sufragante.estado_validacion == "inconsistente", 1), else_=None)).label("inconsistentes"),
     ).outerjoin(Sufragante, Lider.id == Sufragante.lider_id).group_by(Lider.id).all()
 
     return [
@@ -1086,7 +1408,11 @@ async def get_sufragantes_por_lider(
             lider_id=row[0],
             lider_nombre=row[1],
             lider_cedula=row[2],
-            total_sufragantes=row[3] or 0
+            total_sufragantes=row[3] or 0,
+            verificados=row[4] or 0,
+            sin_verificar=row[5] or 0,
+            en_revision=row[6] or 0,
+            inconsistentes=row[7] or 0
         )
         for row in resultados
     ]

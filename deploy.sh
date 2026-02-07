@@ -35,6 +35,15 @@ DOCKER_COMPOSE_FILE="docker-compose.yml"
 BACKUP_DIR="/opt/backups/${PROJECT_NAME}"
 LOG_FILE="/var/log/${PROJECT_NAME}-deploy.log"
 
+# Si .env tiene RDS_HOST, usamos RDS (docker-compose.rds.yml)
+set_compose_file() {
+    if [ -f .env ] && grep -q '^RDS_HOST=' .env 2>/dev/null; then
+        export COMPOSE_FILE=docker-compose.rds.yml
+    else
+        export COMPOSE_FILE=docker-compose.yml
+    fi
+}
+
 # Detectar Docker Compose (v2 plugin o v1 standalone)
 set_compose_cmd() {
     if docker compose version &>/dev/null; then
@@ -50,7 +59,7 @@ show_help() {
     echo ""
     echo "Opciones:"
     echo "  install     Instalar Docker y dependencias"
-    echo "  deploy      Desplegar la aplicación"
+    echo "  deploy      Desplegar la aplicación (usa RDS si .env tiene RDS_HOST)"
     echo "  update      Actualizar la aplicación"
     echo "  backup      Crear respaldo de la base de datos"
     echo "  restore     Restaurar respaldo de la base de datos"
@@ -87,11 +96,14 @@ check_docker() {
 # Verificar archivo .env para producción
 check_env() {
     if [ ! -f .env ]; then
-        if [ -f .env.example ]; then
+        if [ -f .env.aws.example ]; then
+            cp .env.aws.example .env
+            print_warning "Se creó .env desde .env.aws.example. Configure RDS, SECRET_KEY, CORS, etc. y vuelva a ejecutar."
+        elif [ -f .env.example ]; then
             cp .env.example .env
-            print_warning "Se creó .env desde .env.example. Configure los valores reales (contraseñas, SECRET_KEY, VERIFIK_TOKEN) en .env y vuelva a ejecutar: $0 deploy"
+            print_warning "Se creó .env desde .env.example. Configure los valores reales y vuelva a ejecutar."
         else
-            print_error "No existe .env ni .env.example. Cree .env con las variables necesarias para producción."
+            print_error "No existe .env. Cree .env con las variables necesarias (puede usar .env.aws.example para RDS)."
         fi
         exit 1
     fi
@@ -165,10 +177,11 @@ deploy() {
 
     # Cambiar al directorio del proyecto
     cd /opt/${PROJECT_NAME}
+    set_compose_file
 
-    # Verificar que existe docker-compose.yml
-    if [ ! -f "${DOCKER_COMPOSE_FILE}" ]; then
-        print_error "No se encontró ${DOCKER_COMPOSE_FILE}"
+    # Verificar que existe el archivo compose
+    if [ ! -f "docker-compose.yml" ] && [ ! -f "docker-compose.rds.yml" ]; then
+        print_error "No se encontró docker-compose.yml ni docker-compose.rds.yml"
         exit 1
     fi
 
@@ -190,6 +203,7 @@ deploy() {
     print_step "Esperando a que los servicios estén listos..."
     sleep 10
 
+    set_compose_file
     # Verificar estado
     if $COMPOSE_CMD ps | grep -q "Up"; then
         print_success "Aplicación desplegada correctamente"
@@ -217,10 +231,10 @@ update() {
     print_step "Actualizando ${PROJECT_NAME}..."
 
     check_docker
-
     cd /opt/${PROJECT_NAME}
+    set_compose_file
 
-    # Hacer respaldo antes de actualizar
+    # Hacer respaldo antes de actualizar (solo si hay BD: local o RDS)
     print_step "Creando respaldo antes de actualizar..."
     backup
 
@@ -251,30 +265,30 @@ update() {
 backup() {
     print_step "Creando respaldo de la base de datos..."
 
-    check_docker
-
     cd /opt/${PROJECT_NAME}
-
-    # Crear directorio de respaldo si no existe
     mkdir -p ${BACKUP_DIR}
-
-    # Nombre del archivo de respaldo
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     BACKUP_FILE="${BACKUP_DIR}/backup_${TIMESTAMP}.sql"
 
-    # Crear respaldo
-    $COMPOSE_CMD exec -T db pg_dump -U postgres innovabigdata > ${BACKUP_FILE}
+    if [ -f .env ] && grep -q '^RDS_HOST=' .env 2>/dev/null; then
+        # Respaldo contra RDS (desde la EC2)
+        set -a; source .env 2>/dev/null; set +a
+        if ! command -v pg_dump &>/dev/null; then
+            print_warning "Instalando postgresql-client para respaldo RDS..."
+            apt-get update -qq && apt-get install -y -qq postgresql-client
+        fi
+        export PGPASSWORD="${RDS_PASSWORD:-}"
+        pg_dump -h "${RDS_HOST}" -U "${RDS_USER:-postgres}" "${RDS_DB:-innovabigdata}" --no-owner --no-acl > "${BACKUP_FILE}" || { unset PGPASSWORD; print_error "Error al hacer respaldo RDS"; exit 1; }
+        unset PGPASSWORD
+    else
+        check_docker
+        set_compose_file
+        $COMPOSE_CMD exec -T db pg_dump -U postgres innovabigdata > ${BACKUP_FILE}
+    fi
 
-    # Comprimir
     gzip ${BACKUP_FILE}
-    BACKUP_FILE="${BACKUP_FILE}.gz"
-
-    print_success "Respaldo creado: ${BACKUP_FILE}"
-
-    # Limpiar respaldos antiguos (más de 7 días)
-    print_step "Limpiando respaldos antiguos..."
+    print_success "Respaldo creado: ${BACKUP_FILE}.gz"
     find ${BACKUP_DIR} -name "backup_*.sql.gz" -mtime +7 -delete
-
     print_success "Respaldo completado"
 }
 
@@ -318,23 +332,20 @@ restore() {
 # Verificar estado
 status() {
     print_step "Verificando estado de ${PROJECT_NAME}..."
-
     check_docker
-
     cd /opt/${PROJECT_NAME}
     set_compose_cmd
+    set_compose_file
     $COMPOSE_CMD ps
 }
 
 # Ver logs
 logs() {
     print_step "Mostrando logs..."
-
     check_docker
-
     cd /opt/${PROJECT_NAME}
-
     set_compose_cmd
+    set_compose_file
     if [ -n "$2" ]; then
         $COMPOSE_CMD logs -f "$2"
     else
@@ -345,11 +356,10 @@ logs() {
 # Detener servicios
 stop() {
     print_step "Deteniendo servicios..."
-
     check_docker
-
     cd /opt/${PROJECT_NAME}
     set_compose_cmd
+    set_compose_file
     $COMPOSE_CMD down
 
     print_success "Servicios detenidos"
@@ -358,11 +368,10 @@ stop() {
 # Reiniciar servicios
 restart() {
     print_step "Reiniciando servicios..."
-
     check_docker
-
     cd /opt/${PROJECT_NAME}
     set_compose_cmd
+    set_compose_file
     $COMPOSE_CMD restart
 
     print_success "Servicios reiniciados"
@@ -379,11 +388,10 @@ destroy() {
     fi
 
     print_step "Eliminando contenedores y volúmenes..."
-
     check_docker
-
     cd /opt/${PROJECT_NAME}
     set_compose_cmd
+    set_compose_file
     $COMPOSE_CMD down -v
 
     print_success "Contenedores y volúmenes eliminados"
