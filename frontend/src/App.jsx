@@ -1527,7 +1527,7 @@ function VotersListPage() {
   const handleVerifyRow = async (voter) => {
     setVerifyLoadingId(voter.id)
     try {
-      const res = await api.post('/voters/verify', {
+      const res = await api.post(`/voters/verify?exclude_voter_id=${voter.id}`, {
         cedula: voter.cedula,
         department: voter.departamento || null,
         municipality: voter.municipio || null,
@@ -1570,7 +1570,7 @@ function VotersListPage() {
     if (!editVoter) return
     setEditVerifyLoading(true)
     try {
-      const res = await api.post('/voters/verify', {
+      const res = await api.post(`/voters/verify?exclude_voter_id=${editVoter.id}`, {
         cedula: editVoter.cedula,
         department: editFormData.departamento || null,
         municipality: editFormData.municipio || null,

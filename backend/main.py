@@ -22,6 +22,7 @@ from jose import JWTError, jwt
 import httpx
 import openpyxl
 from io import BytesIO
+from urllib.parse import quote_plus
 
 # =====================
 # CONFIGURACIÓN
@@ -36,7 +37,17 @@ VERIFIK_TOKEN = os.getenv("VERIFIK_TOKEN", "")
 
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://innovabigdata.com,http://localhost:5173").split(",")
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:kIiO#$q4Fd$NWI-uWV15SvL#erQ*@db:5432/innovabigdata")
+# DATABASE_URL: usar RDS_* si están definidos (evita problemas con # y $ en la contraseña en .env)
+_rds_host = os.getenv("RDS_HOST")
+if _rds_host:
+    _rds_user = os.getenv("RDS_USER", "postgres")
+    _rds_password = os.getenv("RDS_PASSWORD", "")
+    _rds_db = os.getenv("RDS_DB", "innovabigdata")
+    _rds_port = os.getenv("RDS_PORT", "5432")
+    _safe_password = quote_plus(_rds_password)
+    DATABASE_URL = f"postgresql://{_rds_user}:{_safe_password}@{_rds_host}:{_rds_port}/{_rds_db}"
+else:
+    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@db:5432/innovabigdata")
 
 # =====================
 # LOGGING
@@ -929,12 +940,14 @@ async def desactivar_lider(
 async def verificar_cedula_endpoint(
     body: Optional[VerifyRequest] = None,
     cedula: Optional[str] = Query(None, alias="cedula"),
+    exclude_voter_id: Optional[int] = Query(None, description="Al re-verificar un sufragante existente, pasar su ID para no considerarlo duplicado"),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user)
 ):
     """
     Verifica cédula en Verifik y compara con datos ingresados manualmente.
     Si se envían datos manuales (body), retorna estado: verificado | revision | inconsistente.
+    Para re-verificar un sufragante ya registrado, enviar exclude_voter_id con el id del sufragante.
     """
     doc = (body.cedula if body else cedula) or ""
     if not doc or not doc.isdigit() or len(doc) < 6 or len(doc) > 10:
@@ -943,7 +956,10 @@ async def verificar_cedula_endpoint(
             detail="Cédula inválida: debe tener entre 6 y 10 dígitos"
         )
 
-    existente = db.query(Sufragante).filter(Sufragante.cedula == doc).first()
+    q = db.query(Sufragante).filter(Sufragante.cedula == doc)
+    if exclude_voter_id is not None:
+        q = q.filter(Sufragante.id != exclude_voter_id)
+    existente = q.first()
     if existente:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
