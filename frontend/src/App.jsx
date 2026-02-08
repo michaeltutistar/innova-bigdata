@@ -461,11 +461,11 @@ function Layout() {
               </NavLink>
             </>
           )}
-          <NavLink to="/voters" className={({ isActive }) => `se-nav-link ${isActive ? 'is-active' : ''}`} onClick={() => setNavOpen(false)}>
-            <i className="bi bi-people"></i> Sufragantes
-          </NavLink>
           <NavLink to="/register" className={({ isActive }) => `se-nav-link ${isActive ? 'is-active' : ''}`} onClick={() => setNavOpen(false)}>
             <i className="bi bi-person-plus"></i> Registro
+          </NavLink>
+          <NavLink to="/voters" className={({ isActive }) => `se-nav-link ${isActive ? 'is-active' : ''}`} onClick={() => setNavOpen(false)}>
+            <i className="bi bi-people"></i> Sufragantes
           </NavLink>
         </nav>
         <div className="se-nav-foot">
