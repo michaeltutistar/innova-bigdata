@@ -1527,7 +1527,7 @@ function VotersListPage() {
   }
 
   const handleExportExcel = async () => {
-    if (user?.rol !== 'superadmin') return
+    if (user?.rol !== 'superadmin' && user?.rol !== 'operador') return
     setExportLoading(true)
     try {
       const res = await api.get('/export/xlsx', { responseType: 'blob' })
@@ -1698,7 +1698,7 @@ function VotersListPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="se-title mb-0">Lista de Sufragantes</h1>
-        {user?.rol === 'superadmin' && (
+        {(user?.rol === 'superadmin' || user?.rol === 'operador') && (
           <button type="button" onClick={handleExportExcel} disabled={exportLoading} className="btn se-btn-primary">
             <i className="bi bi-file-earmark-excel me-2"></i>
             {exportLoading ? 'Exportando...' : 'Exportar a Excel'}

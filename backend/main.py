@@ -12,7 +12,7 @@ import json
 from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Query, UploadFile, File, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, ForeignKey, func, text, case
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session
 from sqlalchemy.exc import IntegrityError
@@ -1499,91 +1499,85 @@ async def get_tendencia_registros(
 @app.get("/export/xlsx")
 async def export_excel(
     db: Session = Depends(get_db),
-    current_user: TokenData = Depends(require_superadmin)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
-    Exportar todos los datos a Excel
+    Exportar todos los sufragantes (y líderes) a Excel. Permitido para superadmin y operador.
     """
-    # Obtener todos los sufragantes con información de líder
+    if current_user.rol not in ("superadmin", "operador"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Sin permiso para exportar")
+
     sufragantes = db.query(Sufragante).order_by(Sufragante.fecha_registro.desc()).all()
 
-    # Crear workbook
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Sufragantes"
 
-    # Headers
     headers = [
         "ID", "Nombre", "Cédula", "Edad", "Celular", "Dirección Residencia",
         "Género", "Departamento", "Municipio", "Lugar Votación", "Mesa",
         "Dirección Puesto", "Estado Validación", "Líder ID", "Usuario Registro",
         "Fecha Registro"
     ]
-
     for col, header in enumerate(headers, 1):
         ws.cell(row=1, column=col, value=header)
 
-    # Datos
     for row_idx, s in enumerate(sufragantes, 2):
         ws.cell(row=row_idx, column=1, value=s.id)
-        ws.cell(row=row_idx, column=2, value=s.nombre)
-        ws.cell(row=row_idx, column=3, value=s.cedula)
+        ws.cell(row=row_idx, column=2, value=s.nombre or "")
+        ws.cell(row=row_idx, column=3, value=s.cedula or "")
         ws.cell(row=row_idx, column=4, value=s.edad)
-        ws.cell(row=row_idx, column=5, value=s.celular)
-        ws.cell(row=row_idx, column=6, value=s.direccion_residencia)
-        ws.cell(row=row_idx, column=7, value=s.genero)
-        ws.cell(row=row_idx, column=8, value=s.departamento)
-        ws.cell(row=row_idx, column=9, value=s.municipio)
-        ws.cell(row=row_idx, column=10, value=s.lugar_votacion)
-        ws.cell(row=row_idx, column=11, value=s.mesa_votacion)
-        ws.cell(row=row_idx, column=12, value=s.direccion_puesto)
-        ws.cell(row=row_idx, column=13, value=s.estado_validacion)
+        ws.cell(row=row_idx, column=5, value=s.celular or "")
+        ws.cell(row=row_idx, column=6, value=s.direccion_residencia or "")
+        ws.cell(row=row_idx, column=7, value=s.genero or "")
+        ws.cell(row=row_idx, column=8, value=s.departamento or "")
+        ws.cell(row=row_idx, column=9, value=s.municipio or "")
+        ws.cell(row=row_idx, column=10, value=s.lugar_votacion or "")
+        ws.cell(row=row_idx, column=11, value=s.mesa_votacion or "")
+        ws.cell(row=row_idx, column=12, value=s.direccion_puesto or "")
+        ws.cell(row=row_idx, column=13, value=s.estado_validacion or "")
         ws.cell(row=row_idx, column=14, value=s.lider_id)
-        ws.cell(row=row_idx, column=15, value=s.usuario_registro)
-        ws.cell(row=row_idx, column=16, value=s.fecha_registro.isoformat() if s.fecha_registro else None)
+        ws.cell(row=row_idx, column=15, value=s.usuario_registro or "")
+        ws.cell(row=row_idx, column=16, value=s.fecha_registro.isoformat() if s.fecha_registro else "")
 
-    # Sheet para líderes
     ws2 = wb.create_sheet("Líderes")
     lideres = db.query(Lider).order_by(Lider.nombre).all()
-
     headers_lideres = [
         "ID", "Nombre", "Cédula", "Edad", "Celular", "Dirección",
         "Género", "Departamento", "Municipio", "Barrio", "Zona Influencia",
         "Tipo Liderazgo", "Usuario Registro", "Fecha Registro", "Activo"
     ]
-
     for col, header in enumerate(headers_lideres, 1):
         ws2.cell(row=1, column=col, value=header)
-
     for row_idx, l in enumerate(lideres, 2):
         ws2.cell(row=row_idx, column=1, value=l.id)
-        ws2.cell(row=row_idx, column=2, value=l.nombre)
-        ws2.cell(row=row_idx, column=3, value=l.cedula)
+        ws2.cell(row=row_idx, column=2, value=l.nombre or "")
+        ws2.cell(row=row_idx, column=3, value=l.cedula or "")
         ws2.cell(row=row_idx, column=4, value=l.edad)
-        ws2.cell(row=row_idx, column=5, value=l.celular)
-        ws2.cell(row=row_idx, column=6, value=l.direccion)
-        ws2.cell(row=row_idx, column=7, value=l.genero)
-        ws2.cell(row=row_idx, column=8, value=l.departamento)
-        ws2.cell(row=row_idx, column=9, value=l.municipio)
-        ws2.cell(row=row_idx, column=10, value=l.barrio)
-        ws2.cell(row=row_idx, column=11, value=l.zona_influencia)
-        ws2.cell(row=row_idx, column=12, value=l.tipo_liderazgo)
-        ws2.cell(row=row_idx, column=13, value=l.usuario_registro)
-        ws2.cell(row=row_idx, column=14, value=l.fecha_registro.isoformat() if l.fecha_registro else None)
+        ws2.cell(row=row_idx, column=5, value=l.celular or "")
+        ws2.cell(row=row_idx, column=6, value=l.direccion or "")
+        ws2.cell(row=row_idx, column=7, value=l.genero or "")
+        ws2.cell(row=row_idx, column=8, value=l.departamento or "")
+        ws2.cell(row=row_idx, column=9, value=l.municipio or "")
+        ws2.cell(row=row_idx, column=10, value=l.barrio or "")
+        ws2.cell(row=row_idx, column=11, value=l.zona_influencia or "")
+        ws2.cell(row=row_idx, column=12, value=l.tipo_liderazgo or "")
+        ws2.cell(row=row_idx, column=13, value=l.usuario_registro or "")
+        ws2.cell(row=row_idx, column=14, value=l.fecha_registro.isoformat() if l.fecha_registro else "")
         ws2.cell(row=row_idx, column=15, value="Sí" if l.activo else "No")
 
-    # Guardar en buffer
     buffer = BytesIO()
     wb.save(buffer)
-    buffer.seek(0)
+    content = buffer.getvalue()
+    buffer.close()
 
-    logger.info(f"Superadmin {current_user.username} exportó datos a Excel")
+    filename = f"exportacion_innovabigdata_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    logger.info(f"Usuario {current_user.username} ({current_user.rol}) exportó datos a Excel")
 
-    return FileResponse(
-        path=None,
-        content=buffer.getvalue(),
+    return Response(
+        content=content,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        filename=f"exportacion_innovabigdata_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
 
 # =====================
