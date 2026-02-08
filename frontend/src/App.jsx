@@ -1788,8 +1788,8 @@ function VotersListPage() {
       </div>
 
       {editVoter && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setEditVoter(null)}>
-          <div className="se-modal max-w-lg w-full max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="se-modal max-w-lg w-full max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl p-6">
             <div className="border-b border-[rgba(255,255,255,.1)] pb-4 mb-4">
               {(editVoter.estado_validacion === 'inconsistente' || editVoter.estado_validacion === 'sin_verificar') ? (
                 <h2 className="se-title mb-3">Editar sufragante ({editVoter.estado_validacion === 'inconsistente' ? 'inconsistente' : 'sin verificar'})</h2>
