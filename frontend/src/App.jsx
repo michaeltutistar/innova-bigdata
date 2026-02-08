@@ -205,9 +205,6 @@ function LoginPage() {
                   <Link to="/forgot-password" className="se-link"><i className="bi bi-life-preserver me-1"></i>¿Olvidó su contraseña?</Link>
                 </p>
               </form>
-              <div className="se-foot-muted text-center mt-4">
-                Credenciales de prueba: admin / Admin2026!
-              </div>
             </div>
           </div>
           <p className="se-copy text-center mt-3">© {new Date().getFullYear()} InnovaBigData</p>
