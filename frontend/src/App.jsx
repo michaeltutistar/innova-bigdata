@@ -1491,8 +1491,10 @@ function LeadersPage() {
 
 // Voters List Page (Superadmin)
 function VotersListPage() {
+  const { user } = useAuth()
   const [voters, setVoters] = useState([])
   const [loading, setLoading] = useState(true)
+  const [exportLoading, setExportLoading] = useState(false)
   const [filters, setFilters] = useState({
     estado: '',
     municipio: ''
@@ -1521,6 +1523,27 @@ function VotersListPage() {
       console.error('Error loading voters:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleExportExcel = async () => {
+    if (user?.rol !== 'superadmin') return
+    setExportLoading(true)
+    try {
+      const res = await api.get('/export/xlsx', { responseType: 'blob' })
+      const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `sufragantes_export_${new Date().toISOString().slice(0, 10)}_${Date.now()}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      a.remove()
+    } catch (err) {
+      console.error('Error exporting Excel:', err)
+    } finally {
+      setExportLoading(false)
     }
   }
 
@@ -1673,7 +1696,15 @@ function VotersListPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="se-title mb-0">Lista de Sufragantes</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="se-title mb-0">Lista de Sufragantes</h1>
+        {user?.rol === 'superadmin' && (
+          <button type="button" onClick={handleExportExcel} disabled={exportLoading} className="btn se-btn-primary">
+            <i className="bi bi-file-earmark-excel me-2"></i>
+            {exportLoading ? 'Exportando...' : 'Exportar a Excel'}
+          </button>
+        )}
+      </div>
 
       <div className="se-cardx">
         <div className="se-section-title"><i className="bi bi-funnel"></i> Filtros</div>
