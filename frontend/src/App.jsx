@@ -1552,6 +1552,8 @@ function VotersListPage() {
   const openEditModal = (voter) => {
     setEditVoter(voter)
     setEditFormData({
+      nombre: voter.nombre || '',
+      cedula: voter.cedula || '',
       departamento: voter.departamento || '',
       municipio: voter.municipio || '',
       lugar_votacion: voter.lugar_votacion || '',
@@ -1570,8 +1572,9 @@ function VotersListPage() {
     if (!editVoter) return
     setEditVerifyLoading(true)
     try {
+      const cedulaToVerify = (editFormData.cedula || editVoter.cedula || '').trim()
       const res = await api.post(`/voters/verify?exclude_voter_id=${editVoter.id}`, {
-        cedula: editVoter.cedula,
+        cedula: cedulaToVerify || editVoter.cedula,
         department: editFormData.departamento || null,
         municipality: editFormData.municipio || null,
         votingStation: editFormData.lugar_votacion || null,
@@ -1591,7 +1594,7 @@ function VotersListPage() {
     if (!editVoter) return
     setEditSaving(true)
     try {
-      await api.patch(`/voters/${editVoter.id}`, {
+      const payload = {
         departamento: editFormData.departamento || null,
         municipio: editFormData.municipio || null,
         lugar_votacion: editFormData.lugar_votacion || null,
@@ -1599,7 +1602,12 @@ function VotersListPage() {
         direccion_puesto: editFormData.direccion_puesto || null,
         estado_validacion: editEstado,
         discrepancias: editDiscrepancias.length ? editDiscrepancias : null
-      })
+      }
+      if (editVoter.estado_validacion === 'inconsistente' || editVoter.estado_validacion === 'sin_verificar') {
+        if (editFormData.nombre?.trim()) payload.nombre = editFormData.nombre.trim()
+        if (editFormData.cedula?.trim()) payload.cedula = editFormData.cedula.trim()
+      }
+      await api.patch(`/voters/${editVoter.id}`, payload)
       setEditVoter(null)
       await loadVoters()
     } catch (err) {
@@ -1726,7 +1734,7 @@ function VotersListPage() {
                   <td className="px-4 py-3">{getStatusBadge(voter.estado_validacion, voter.discrepancias_verifik)}</td>
                   <td className="px-4 py-3 text-sm se-foot-muted whitespace-nowrap">{new Date(voter.fecha_registro).toLocaleDateString()}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    {(voter.estado_validacion === 'revision' || voter.estado_validacion === 'sin_verificar') && (
+                    {(voter.estado_validacion === 'revision' || voter.estado_validacion === 'sin_verificar' || voter.estado_validacion === 'inconsistente') && (
                       <span className="inline-flex gap-2">
                         <button type="button" onClick={() => openEditModal(voter)} className="btn se-btn-soft text-sm py-1 px-2">Editar</button>
                         <button type="button" onClick={() => handleVerifyRow(voter)} disabled={verifyLoadingId === voter.id} className="btn se-btn-primary text-sm py-1 px-2">
@@ -1746,10 +1754,32 @@ function VotersListPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setEditVoter(null)}>
           <div className="se-modal max-w-lg w-full max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl p-6" onClick={(e) => e.stopPropagation()}>
             <div className="border-b border-[rgba(255,255,255,.1)] pb-4 mb-4">
-              <h2 className="se-title mb-1">Editar – {editVoter.nombre}</h2>
-              <p className="se-foot-muted">Cédula: {editVoter.cedula}</p>
+              {(editVoter.estado_validacion === 'inconsistente' || editVoter.estado_validacion === 'sin_verificar') ? (
+                <h2 className="se-title mb-3">Editar sufragante ({editVoter.estado_validacion === 'inconsistente' ? 'inconsistente' : 'sin verificar'})</h2>
+              ) : (
+                <>
+                  <h2 className="se-title mb-1">Editar – {editVoter.nombre}</h2>
+                  <p className="se-foot-muted">Cédula: {editVoter.cedula}</p>
+                </>
+              )}
             </div>
             <div className="space-y-4">
+              {(editVoter.estado_validacion === 'inconsistente' || editVoter.estado_validacion === 'sin_verificar') && (
+                <>
+                  <div>
+                    <label className="form-label se-label block mb-1">Nombre</label>
+                    <div className="se-inputgroup flex rounded-2xl overflow-hidden">
+                      <input type="text" className="se-input flex-1 min-w-0 px-3 py-2" value={editFormData.nombre} onChange={(e) => setEditFormData(prev => ({ ...prev, nombre: e.target.value }))} placeholder="Nombres y apellidos" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="form-label se-label block mb-1">Cédula</label>
+                    <div className="se-inputgroup flex rounded-2xl overflow-hidden">
+                      <input type="text" className="se-input flex-1 min-w-0 px-3 py-2" value={editFormData.cedula} onChange={(e) => setEditFormData(prev => ({ ...prev, cedula: e.target.value.replace(/\D/g, '') }))} placeholder="Solo números, 6-10 dígitos" maxLength={10} />
+                    </div>
+                  </div>
+                </>
+              )}
               <div>
                 <label className="form-label se-label block mb-1">Departamento</label>
                 <div className="se-inputgroup flex rounded-2xl overflow-hidden">

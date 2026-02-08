@@ -278,7 +278,9 @@ class SufraganteResponse(BaseModel):
         from_attributes = True
 
 class SufraganteUpdate(BaseModel):
-    """Actualización parcial de sufragante (datos Verifik y estado de verificación)"""
+    """Actualización parcial de sufragante (datos Verifik, estado, y para inconsistentes: nombre y cédula)"""
+    nombre: Optional[str] = Field(None, min_length=2, max_length=200)
+    cedula: Optional[str] = Field(None, min_length=6, max_length=10, pattern="^[0-9]+$")
     departamento: Optional[str] = None
     municipio: Optional[str] = None
     lugar_votacion: Optional[str] = None
@@ -1132,6 +1134,16 @@ async def actualizar_sufragante(
         raise HTTPException(status_code=403, detail="No tiene acceso a este registro")
 
     update = data.model_dump(exclude_unset=True)
+    if "nombre" in update and update["nombre"]:
+        sufragante.nombre = normalizar_texto(update["nombre"])
+    if "cedula" in update and update["cedula"]:
+        nueva_cedula = update["cedula"].strip()
+        if len(nueva_cedula) < 6 or len(nueva_cedula) > 10 or not nueva_cedula.isdigit():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cédula inválida: entre 6 y 10 dígitos")
+        otro = db.query(Sufragante).filter(Sufragante.cedula == nueva_cedula, Sufragante.id != voter_id).first()
+        if otro:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La cédula ya está registrada por otro sufragante")
+        sufragante.cedula = nueva_cedula
     if "departamento" in update:
         sufragante.departamento = normalizar_texto(update["departamento"]) if update["departamento"] else None
     if "municipio" in update:
