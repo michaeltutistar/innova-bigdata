@@ -1554,6 +1554,9 @@ function VotersListPage() {
     setEditFormData({
       nombre: voter.nombre || '',
       cedula: voter.cedula || '',
+      genero: voter.genero || '',
+      celular: voter.celular || '',
+      direccion_residencia: voter.direccion_residencia || '',
       departamento: voter.departamento || '',
       municipio: voter.municipio || '',
       lugar_votacion: voter.lugar_votacion || '',
@@ -1601,7 +1604,10 @@ function VotersListPage() {
         mesa_votacion: editFormData.mesa_votacion || null,
         direccion_puesto: editFormData.direccion_puesto || null,
         estado_validacion: editEstado,
-        discrepancias: editDiscrepancias.length ? editDiscrepancias : null
+        discrepancias: editDiscrepancias.length ? editDiscrepancias : null,
+        genero: editFormData.genero || null,
+        celular: editFormData.celular?.trim() || null,
+        direccion_residencia: editFormData.direccion_residencia?.trim() || null
       }
       if (editVoter.estado_validacion === 'inconsistente' || editVoter.estado_validacion === 'sin_verificar') {
         if (editFormData.nombre?.trim()) payload.nombre = editFormData.nombre.trim()
@@ -1808,6 +1814,32 @@ function VotersListPage() {
                 <label className="form-label se-label block mb-1">Dirección del Puesto</label>
                 <div className="se-inputgroup flex rounded-2xl overflow-hidden">
                   <input type="text" className="se-input flex-1 min-w-0 px-3 py-2" value={editFormData.direccion_puesto} onChange={(e) => setEditFormData(prev => ({ ...prev, direccion_puesto: e.target.value }))} />
+                </div>
+              </div>
+              <div className="border-t border-[rgba(255,255,255,.1)] pt-4 mt-2">
+                <p className="form-label se-label mb-2">Datos personales</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="form-label se-label block mb-1">Género</label>
+                    <select className="se-input w-full px-3 py-2 rounded-2xl" value={editFormData.genero} onChange={(e) => setEditFormData(prev => ({ ...prev, genero: e.target.value }))}>
+                      <option value="">—</option>
+                      <option value="M">M</option>
+                      <option value="F">F</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label se-label block mb-1">Celular</label>
+                    <div className="se-inputgroup flex rounded-2xl overflow-hidden">
+                      <input type="text" className="se-input flex-1 min-w-0 px-3 py-2" value={editFormData.celular} onChange={(e) => setEditFormData(prev => ({ ...prev, celular: e.target.value.replace(/\D/g, '').slice(0, 10) }))} placeholder="10 dígitos, inicia por 3 (vacío = No tiene)" maxLength={10} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="form-label se-label block mb-1">Dirección de residencia</label>
+                    <div className="se-inputgroup flex rounded-2xl overflow-hidden">
+                      <input type="text" className="se-input flex-1 min-w-0 px-3 py-2" value={editFormData.direccion_residencia} onChange={(e) => setEditFormData(prev => ({ ...prev, direccion_residencia: e.target.value }))} placeholder="Mín. 5 caracteres" />
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap">

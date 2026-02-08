@@ -278,9 +278,12 @@ class SufraganteResponse(BaseModel):
         from_attributes = True
 
 class SufraganteUpdate(BaseModel):
-    """Actualización parcial de sufragante (datos Verifik, estado, y para inconsistentes: nombre y cédula)"""
+    """Actualización parcial de sufragante (datos Verifik, estado, datos personales; nombre/cedula solo para sin_verificar e inconsistente)"""
     nombre: Optional[str] = Field(None, min_length=2, max_length=200)
     cedula: Optional[str] = Field(None, min_length=6, max_length=10, pattern="^[0-9]+$")
+    genero: Optional[str] = Field(None, pattern="^(M|F|Otro)$")
+    celular: Optional[str] = None  # 10 dígitos empezando por 3, o vacío/null = "No tiene"
+    direccion_residencia: Optional[str] = Field(None, min_length=5, max_length=500)
     departamento: Optional[str] = None
     municipio: Optional[str] = None
     lugar_votacion: Optional[str] = None
@@ -1158,6 +1161,19 @@ async def actualizar_sufragante(
         sufragante.estado_validacion = update["estado_validacion"]
     if "discrepancias" in update:
         sufragante.discrepancias_verifik = json.dumps(update["discrepancias"]) if update["discrepancias"] else None
+    if "genero" in update:
+        sufragante.genero = normalizar_genero(update.get("genero"))
+    if "celular" in update:
+        cel = (update["celular"] or "").strip()
+        if not cel or cel.upper() in ("NO TIENE", "NO TIENE CELULAR"):
+            sufragante.celular = None
+        else:
+            cel = cel.replace(" ", "")
+            if len(cel) != 10 or not cel.isdigit() or cel[0] != "3":
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Celular debe tener 10 dígitos e iniciar por 3 (o vacío)")
+            sufragante.celular = cel
+    if "direccion_residencia" in update and update["direccion_residencia"]:
+        sufragante.direccion_residencia = normalizar_texto(update["direccion_residencia"])[:500]
 
     db.commit()
     db.refresh(sufragante)
