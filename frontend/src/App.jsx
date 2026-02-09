@@ -1215,10 +1215,23 @@ function LeadersPage() {
   const [loadingForm, setLoadingForm] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [departamentosData, setDepartamentosData] = useState({ departamentos: [], municipios: {} })
+  const [municipiosFiltrados, setMunicipiosFiltrados] = useState([])
 
   useEffect(() => {
     loadLeaders()
+    loadDepartamentos()
   }, [])
+
+  const loadDepartamentos = async () => {
+    try {
+      const response = await fetch('/departamentos.json')
+      const data = await response.json()
+      setDepartamentosData(data)
+    } catch (err) {
+      console.error('Error cargando departamentos:', err)
+    }
+  }
 
   const loadLeaders = async () => {
     try {
@@ -1233,10 +1246,23 @@ function LeadersPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'nombre' ? value.toUpperCase() : value
-    }))
+    if (name === 'departamento') {
+      // Encontrar el código del departamento seleccionado
+      const depto = departamentosData.departamentos.find(d => d.nombre === value)
+      const codigoDepto = depto?.codigo
+      const municipios = codigoDepto ? (departamentosData.municipios[codigoDepto] || []) : []
+      setMunicipiosFiltrados(municipios)
+      setFormData(prev => ({
+        ...prev,
+        departamento: value,
+        municipio: '' // Limpiar municipio al cambiar departamento
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: name === 'nombre' ? value.toUpperCase() : value
+      }))
+    }
   }
 
   const openCreateModal = () => {
@@ -1254,6 +1280,7 @@ function LeadersPage() {
       zona_influencia: '',
       tipo_liderazgo: ''
     })
+    setMunicipiosFiltrados([])
     setShowModal(true)
     setError('')
     setSuccess('')
@@ -1261,6 +1288,11 @@ function LeadersPage() {
 
   const openEditModal = (leader) => {
     setEditingLeader(leader)
+    const deptoNombre = leader.departamento || ''
+    const depto = departamentosData.departamentos.find(d => d.nombre === deptoNombre)
+    const codigoDepto = depto?.codigo
+    const municipios = codigoDepto ? (departamentosData.municipios[codigoDepto] || []) : []
+    setMunicipiosFiltrados(municipios)
     setFormData({
       nombre: leader.nombre,
       cedula: leader.cedula,
@@ -1268,8 +1300,8 @@ function LeadersPage() {
       celular: leader.celular,
       direccion: leader.direccion,
       genero: leader.genero,
-      departamento: leader.departamento,
-      municipio: leader.municipio,
+      departamento: leader.departamento || '',
+      municipio: leader.municipio || '',
       barrio: leader.barrio || '',
       zona_influencia: leader.zona_influencia || '',
       tipo_liderazgo: leader.tipo_liderazgo || ''
@@ -1439,13 +1471,23 @@ function LeadersPage() {
                 <div>
                   <label className="form-label se-label block mb-1">Departamento *</label>
                   <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-                    <input type="text" name="departamento" className="se-input flex-1 min-w-0 px-3 py-2" value={formData.departamento} onChange={handleChange} required />
+                    <select name="departamento" className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={formData.departamento} onChange={handleChange} required>
+                      <option value="">Seleccionar...</option>
+                      {departamentosData.departamentos.map(depto => (
+                        <option key={depto.codigo} value={depto.nombre}>{depto.nombre}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <div>
                   <label className="form-label se-label block mb-1">Municipio *</label>
                   <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-                    <input type="text" name="municipio" className="se-input flex-1 min-w-0 px-3 py-2" value={formData.municipio} onChange={handleChange} required />
+                    <select name="municipio" className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={formData.municipio} onChange={handleChange} required disabled={!formData.departamento}>
+                      <option value="">{formData.departamento ? 'Seleccionar...' : 'Seleccione primero un departamento'}</option>
+                      {municipiosFiltrados.map(muni => (
+                        <option key={muni.codigo} value={muni.nombre}>{muni.nombre}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>

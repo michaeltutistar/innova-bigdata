@@ -1,0 +1,4684 @@
+{
+  "departamentos": [
+    {
+      "codigo": "91",
+      "nombre": "AMAZONAS"
+    },
+    {
+      "codigo": "5",
+      "nombre": "ANTIOQUIA"
+    },
+    {
+      "codigo": "81",
+      "nombre": "ARAUCA"
+    },
+    {
+      "codigo": "8",
+      "nombre": "ATLANTICO"
+    },
+    {
+      "codigo": "11",
+      "nombre": "BOGOTA"
+    },
+    {
+      "codigo": "13",
+      "nombre": "BOLIVAR"
+    },
+    {
+      "codigo": "15",
+      "nombre": "BOYACA"
+    },
+    {
+      "codigo": "17",
+      "nombre": "CALDAS"
+    },
+    {
+      "codigo": "18",
+      "nombre": "CAQUETA"
+    },
+    {
+      "codigo": "85",
+      "nombre": "CASANARE"
+    },
+    {
+      "codigo": "19",
+      "nombre": "CAUCA"
+    },
+    {
+      "codigo": "20",
+      "nombre": "CESAR"
+    },
+    {
+      "codigo": "27",
+      "nombre": "CHOCO"
+    },
+    {
+      "codigo": "23",
+      "nombre": "CORDOBA"
+    },
+    {
+      "codigo": "25",
+      "nombre": "CUNDINAMARCA"
+    },
+    {
+      "codigo": "94",
+      "nombre": "GUAINIA"
+    },
+    {
+      "codigo": "95",
+      "nombre": "GUAVIARE"
+    },
+    {
+      "codigo": "41",
+      "nombre": "HUILA"
+    },
+    {
+      "codigo": "44",
+      "nombre": "LA GUAJIRA"
+    },
+    {
+      "codigo": "47",
+      "nombre": "MAGDALENA"
+    },
+    {
+      "codigo": "50",
+      "nombre": "META"
+    },
+    {
+      "codigo": "54",
+      "nombre": "N. DE SANTANDER"
+    },
+    {
+      "codigo": "52",
+      "nombre": "NARIÑO"
+    },
+    {
+      "codigo": "86",
+      "nombre": "PUTUMAYO"
+    },
+    {
+      "codigo": "63",
+      "nombre": "QUINDIO"
+    },
+    {
+      "codigo": "66",
+      "nombre": "RISARALDA"
+    },
+    {
+      "codigo": "88",
+      "nombre": "SAN ANDRES"
+    },
+    {
+      "codigo": "68",
+      "nombre": "SANTANDER"
+    },
+    {
+      "codigo": "70",
+      "nombre": "SUCRE"
+    },
+    {
+      "codigo": "73",
+      "nombre": "TOLIMA"
+    },
+    {
+      "codigo": "76",
+      "nombre": "VALLE DEL CAUCA"
+    },
+    {
+      "codigo": "97",
+      "nombre": "VAUPES"
+    },
+    {
+      "codigo": "99",
+      "nombre": "VICHADA"
+    }
+  ],
+  "municipios": {
+    "5": [
+      {
+        "codigo": "2",
+        "nombre": "ABEJORRAL"
+      },
+      {
+        "codigo": "4",
+        "nombre": "ABRIAQUI"
+      },
+      {
+        "codigo": "21",
+        "nombre": "ALEJANDRIA"
+      },
+      {
+        "codigo": "30",
+        "nombre": "AMAGA"
+      },
+      {
+        "codigo": "31",
+        "nombre": "AMALFI"
+      },
+      {
+        "codigo": "34",
+        "nombre": "ANDES"
+      },
+      {
+        "codigo": "36",
+        "nombre": "ANGELOPOLIS"
+      },
+      {
+        "codigo": "38",
+        "nombre": "ANGOSTURA"
+      },
+      {
+        "codigo": "40",
+        "nombre": "ANORI"
+      },
+      {
+        "codigo": "44",
+        "nombre": "ANZA"
+      },
+      {
+        "codigo": "45",
+        "nombre": "APARTADO"
+      },
+      {
+        "codigo": "51",
+        "nombre": "ARBOLETES"
+      },
+      {
+        "codigo": "55",
+        "nombre": "ARGELIA"
+      },
+      {
+        "codigo": "59",
+        "nombre": "ARMENIA"
+      },
+      {
+        "codigo": "79",
+        "nombre": "BARBOSA"
+      },
+      {
+        "codigo": "88",
+        "nombre": "BELLO"
+      },
+      {
+        "codigo": "86",
+        "nombre": "BELMIRA"
+      },
+      {
+        "codigo": "91",
+        "nombre": "BETANIA"
+      },
+      {
+        "codigo": "93",
+        "nombre": "BETULIA"
+      },
+      {
+        "codigo": "107",
+        "nombre": "BRICEÑO"
+      },
+      {
+        "codigo": "113",
+        "nombre": "BURITICA"
+      },
+      {
+        "codigo": "120",
+        "nombre": "CACERES"
+      },
+      {
+        "codigo": "125",
+        "nombre": "CAICEDO"
+      },
+      {
+        "codigo": "129",
+        "nombre": "CALDAS"
+      },
+      {
+        "codigo": "134",
+        "nombre": "CAMPAMENTO"
+      },
+      {
+        "codigo": "142",
+        "nombre": "CARACOLI"
+      },
+      {
+        "codigo": "145",
+        "nombre": "CARAMANTA"
+      },
+      {
+        "codigo": "147",
+        "nombre": "CAREPA"
+      },
+      {
+        "codigo": "150",
+        "nombre": "CAROLINA"
+      },
+      {
+        "codigo": "154",
+        "nombre": "CAUCASIA"
+      },
+      {
+        "codigo": "138",
+        "nombre": "CAÑASGORDAS"
+      },
+      {
+        "codigo": "172",
+        "nombre": "CHIGORODO"
+      },
+      {
+        "codigo": "190",
+        "nombre": "CISNEROS"
+      },
+      {
+        "codigo": "101",
+        "nombre": "CIUDAD BOLIVAR"
+      },
+      {
+        "codigo": "197",
+        "nombre": "COCORNA"
+      },
+      {
+        "codigo": "206",
+        "nombre": "CONCEPCION"
+      },
+      {
+        "codigo": "209",
+        "nombre": "CONCORDIA"
+      },
+      {
+        "codigo": "212",
+        "nombre": "COPACABANA"
+      },
+      {
+        "codigo": "234",
+        "nombre": "DABEIBA"
+      },
+      {
+        "codigo": "237",
+        "nombre": "DON MATIAS"
+      },
+      {
+        "codigo": "240",
+        "nombre": "EBEJICO"
+      },
+      {
+        "codigo": "250",
+        "nombre": "EL BAGRE"
+      },
+      {
+        "codigo": "148",
+        "nombre": "EL CARMEN DE VIBORAL"
+      },
+      {
+        "codigo": "697",
+        "nombre": "EL SANTUARIO"
+      },
+      {
+        "codigo": "264",
+        "nombre": "ENTRERRIOS"
+      },
+      {
+        "codigo": "266",
+        "nombre": "ENVIGADO"
+      },
+      {
+        "codigo": "282",
+        "nombre": "FREDONIA"
+      },
+      {
+        "codigo": "284",
+        "nombre": "FRONTINO"
+      },
+      {
+        "codigo": "306",
+        "nombre": "GIRALDO"
+      },
+      {
+        "codigo": "308",
+        "nombre": "GIRARDOTA"
+      },
+      {
+        "codigo": "310",
+        "nombre": "GOMEZ PLATA"
+      },
+      {
+        "codigo": "313",
+        "nombre": "GRANADA"
+      },
+      {
+        "codigo": "315",
+        "nombre": "GUADALUPE"
+      },
+      {
+        "codigo": "318",
+        "nombre": "GUARNE"
+      },
+      {
+        "codigo": "321",
+        "nombre": "GUATAPE"
+      },
+      {
+        "codigo": "347",
+        "nombre": "HELICONIA"
+      },
+      {
+        "codigo": "353",
+        "nombre": "HISPANIA"
+      },
+      {
+        "codigo": "360",
+        "nombre": "ITAGUI"
+      },
+      {
+        "codigo": "361",
+        "nombre": "ITUANGO"
+      },
+      {
+        "codigo": "364",
+        "nombre": "JARDIN"
+      },
+      {
+        "codigo": "368",
+        "nombre": "JERICO"
+      },
+      {
+        "codigo": "376",
+        "nombre": "LA CEJA"
+      },
+      {
+        "codigo": "380",
+        "nombre": "LA ESTRELLA"
+      },
+      {
+        "codigo": "390",
+        "nombre": "LA PINTADA"
+      },
+      {
+        "codigo": "400",
+        "nombre": "LA UNION"
+      },
+      {
+        "codigo": "411",
+        "nombre": "LIBORINA"
+      },
+      {
+        "codigo": "425",
+        "nombre": "MACEO"
+      },
+      {
+        "codigo": "440",
+        "nombre": "MARINILLA"
+      },
+      {
+        "codigo": "1",
+        "nombre": "MEDELLIN"
+      },
+      {
+        "codigo": "467",
+        "nombre": "MONTEBELLO"
+      },
+      {
+        "codigo": "475",
+        "nombre": "MURINDO"
+      },
+      {
+        "codigo": "480",
+        "nombre": "MUTATA"
+      },
+      {
+        "codigo": "483",
+        "nombre": "NARIÑO"
+      },
+      {
+        "codigo": "495",
+        "nombre": "NECHI"
+      },
+      {
+        "codigo": "490",
+        "nombre": "NECOCLI"
+      },
+      {
+        "codigo": "501",
+        "nombre": "OLAYA"
+      },
+      {
+        "codigo": "543",
+        "nombre": "PEQUE"
+      },
+      {
+        "codigo": "541",
+        "nombre": "PEÐOL"
+      },
+      {
+        "codigo": "576",
+        "nombre": "PUEBLORRICO"
+      },
+      {
+        "codigo": "579",
+        "nombre": "PUERTO BERRIO"
+      },
+      {
+        "codigo": "585",
+        "nombre": "PUERTO NARE"
+      },
+      {
+        "codigo": "591",
+        "nombre": "PUERTO TRIUNFO"
+      },
+      {
+        "codigo": "604",
+        "nombre": "REMEDIOS"
+      },
+      {
+        "codigo": "607",
+        "nombre": "RETIRO"
+      },
+      {
+        "codigo": "615",
+        "nombre": "RIONEGRO"
+      },
+      {
+        "codigo": "628",
+        "nombre": "SABANALARGA"
+      },
+      {
+        "codigo": "631",
+        "nombre": "SABANETA"
+      },
+      {
+        "codigo": "642",
+        "nombre": "SALGAR"
+      },
+      {
+        "codigo": "647",
+        "nombre": "SAN ANDRES DE CUERQUIA"
+      },
+      {
+        "codigo": "649",
+        "nombre": "SAN CARLOS"
+      },
+      {
+        "codigo": "652",
+        "nombre": "SAN FRANCISCO"
+      },
+      {
+        "codigo": "656",
+        "nombre": "SAN JERONIMO"
+      },
+      {
+        "codigo": "658",
+        "nombre": "SAN JOSE DE LA MONTAÑA"
+      },
+      {
+        "codigo": "659",
+        "nombre": "SAN JUAN DE URABA"
+      },
+      {
+        "codigo": "660",
+        "nombre": "SAN LUIS"
+      },
+      {
+        "codigo": "664",
+        "nombre": "SAN PEDRO"
+      },
+      {
+        "codigo": "665",
+        "nombre": "SAN PEDRO DE URABA"
+      },
+      {
+        "codigo": "667",
+        "nombre": "SAN RAFAEL"
+      },
+      {
+        "codigo": "670",
+        "nombre": "SAN ROQUE"
+      },
+      {
+        "codigo": "674",
+        "nombre": "SAN VICENTE"
+      },
+      {
+        "codigo": "679",
+        "nombre": "SANTA BARBARA"
+      },
+      {
+        "codigo": "686",
+        "nombre": "SANTA ROSA DE OSOS"
+      },
+      {
+        "codigo": "42",
+        "nombre": "SANTAFE DE ANTIOQUIA"
+      },
+      {
+        "codigo": "690",
+        "nombre": "SANTO DOMINGO"
+      },
+      {
+        "codigo": "736",
+        "nombre": "SEGOVIA"
+      },
+      {
+        "codigo": "756",
+        "nombre": "SONSON"
+      },
+      {
+        "codigo": "761",
+        "nombre": "SOPETRAN"
+      },
+      {
+        "codigo": "789",
+        "nombre": "TAMESIS"
+      },
+      {
+        "codigo": "790",
+        "nombre": "TARAZA"
+      },
+      {
+        "codigo": "792",
+        "nombre": "TARSO"
+      },
+      {
+        "codigo": "809",
+        "nombre": "TITIRIBI"
+      },
+      {
+        "codigo": "819",
+        "nombre": "TOLEDO"
+      },
+      {
+        "codigo": "837",
+        "nombre": "TURBO"
+      },
+      {
+        "codigo": "842",
+        "nombre": "URAMITA"
+      },
+      {
+        "codigo": "847",
+        "nombre": "URRAO"
+      },
+      {
+        "codigo": "854",
+        "nombre": "VALDIVIA"
+      },
+      {
+        "codigo": "856",
+        "nombre": "VALPARAISO"
+      },
+      {
+        "codigo": "858",
+        "nombre": "VEGACHI"
+      },
+      {
+        "codigo": "861",
+        "nombre": "VENECIA"
+      },
+      {
+        "codigo": "873",
+        "nombre": "VIGIA DEL FUERTE"
+      },
+      {
+        "codigo": "885",
+        "nombre": "YALI"
+      },
+      {
+        "codigo": "887",
+        "nombre": "YARUMAL"
+      },
+      {
+        "codigo": "890",
+        "nombre": "YOLOMBO"
+      },
+      {
+        "codigo": "893",
+        "nombre": "YONDO"
+      },
+      {
+        "codigo": "895",
+        "nombre": "ZARAGOZA"
+      }
+    ],
+    "8": [
+      {
+        "codigo": "78",
+        "nombre": "BARANOA"
+      },
+      {
+        "codigo": "1",
+        "nombre": "BARRANQUILLA"
+      },
+      {
+        "codigo": "137",
+        "nombre": "CAMPO DE LA CRUZ"
+      },
+      {
+        "codigo": "141",
+        "nombre": "CANDELARIA"
+      },
+      {
+        "codigo": "296",
+        "nombre": "GALAPA"
+      },
+      {
+        "codigo": "372",
+        "nombre": "JUAN DE ACOSTA"
+      },
+      {
+        "codigo": "421",
+        "nombre": "LURUACO"
+      },
+      {
+        "codigo": "433",
+        "nombre": "MALAMBO"
+      },
+      {
+        "codigo": "436",
+        "nombre": "MANATI"
+      },
+      {
+        "codigo": "520",
+        "nombre": "PALMAR DE VARELA"
+      },
+      {
+        "codigo": "549",
+        "nombre": "PIOJO"
+      },
+      {
+        "codigo": "558",
+        "nombre": "POLONUEVO"
+      },
+      {
+        "codigo": "560",
+        "nombre": "PONEDERA"
+      },
+      {
+        "codigo": "573",
+        "nombre": "PUERTO COLOMBIA"
+      },
+      {
+        "codigo": "606",
+        "nombre": "REPELON"
+      },
+      {
+        "codigo": "634",
+        "nombre": "SABANAGRANDE"
+      },
+      {
+        "codigo": "638",
+        "nombre": "SABANALARGA"
+      },
+      {
+        "codigo": "675",
+        "nombre": "SANTA LUCIA"
+      },
+      {
+        "codigo": "685",
+        "nombre": "SANTO TOMAS"
+      },
+      {
+        "codigo": "758",
+        "nombre": "SOLEDAD"
+      },
+      {
+        "codigo": "770",
+        "nombre": "SUAN"
+      },
+      {
+        "codigo": "832",
+        "nombre": "TUBARA"
+      },
+      {
+        "codigo": "849",
+        "nombre": "USIACURI"
+      }
+    ],
+    "11": [
+      {
+        "codigo": "1",
+        "nombre": "BOGOTA, D.C."
+      }
+    ],
+    "13": [
+      {
+        "codigo": "6",
+        "nombre": "ACHI"
+      },
+      {
+        "codigo": "30",
+        "nombre": "ALTOS DEL ROSARIO"
+      },
+      {
+        "codigo": "42",
+        "nombre": "ARENAL"
+      },
+      {
+        "codigo": "52",
+        "nombre": "ARJONA"
+      },
+      {
+        "codigo": "62",
+        "nombre": "ARROYOHONDO"
+      },
+      {
+        "codigo": "74",
+        "nombre": "BARRANCO DE LOBA"
+      },
+      {
+        "codigo": "140",
+        "nombre": "CALAMAR"
+      },
+      {
+        "codigo": "160",
+        "nombre": "CANTAGALLO"
+      },
+      {
+        "codigo": "1",
+        "nombre": "CARTAGENA"
+      },
+      {
+        "codigo": "188",
+        "nombre": "CICUCO"
+      },
+      {
+        "codigo": "222",
+        "nombre": "CLEMENCIA"
+      },
+      {
+        "codigo": "212",
+        "nombre": "CORDOBA"
+      },
+      {
+        "codigo": "244",
+        "nombre": "EL CARMEN DE BOLIVAR"
+      },
+      {
+        "codigo": "248",
+        "nombre": "EL GUAMO"
+      },
+      {
+        "codigo": "268",
+        "nombre": "EL PEÑON"
+      },
+      {
+        "codigo": "300",
+        "nombre": "HATILLO DE LOBA"
+      },
+      {
+        "codigo": "430",
+        "nombre": "MAGANGUE"
+      },
+      {
+        "codigo": "433",
+        "nombre": "MAHATES"
+      },
+      {
+        "codigo": "440",
+        "nombre": "MARGARITA"
+      },
+      {
+        "codigo": "442",
+        "nombre": "MARIA LA BAJA"
+      },
+      {
+        "codigo": "468",
+        "nombre": "MOMPOS"
+      },
+      {
+        "codigo": "458",
+        "nombre": "MONTECRISTO"
+      },
+      {
+        "codigo": "473",
+        "nombre": "MORALES"
+      },
+      {
+        "codigo": "490",
+        "nombre": "NOROSI"
+      },
+      {
+        "codigo": "549",
+        "nombre": "PINILLOS"
+      },
+      {
+        "codigo": "580",
+        "nombre": "REGIDOR"
+      },
+      {
+        "codigo": "600",
+        "nombre": "RIO VIEJO"
+      },
+      {
+        "codigo": "620",
+        "nombre": "SAN CRISTOBAL"
+      },
+      {
+        "codigo": "647",
+        "nombre": "SAN ESTANISLAO"
+      },
+      {
+        "codigo": "650",
+        "nombre": "SAN FERNANDO"
+      },
+      {
+        "codigo": "654",
+        "nombre": "SAN JACINTO"
+      },
+      {
+        "codigo": "655",
+        "nombre": "SAN JACINTO DEL CAUCA"
+      },
+      {
+        "codigo": "657",
+        "nombre": "SAN JUAN NEPOMUCENO"
+      },
+      {
+        "codigo": "667",
+        "nombre": "SAN MARTIN DE LOBA"
+      },
+      {
+        "codigo": "670",
+        "nombre": "SAN PABLO"
+      },
+      {
+        "codigo": "673",
+        "nombre": "SANTA CATALINA"
+      },
+      {
+        "codigo": "683",
+        "nombre": "SANTA ROSA"
+      },
+      {
+        "codigo": "688",
+        "nombre": "SANTA ROSA DEL SUR"
+      },
+      {
+        "codigo": "744",
+        "nombre": "SIMITI"
+      },
+      {
+        "codigo": "760",
+        "nombre": "SOPLAVIENTO"
+      },
+      {
+        "codigo": "780",
+        "nombre": "TALAIGUA NUEVO"
+      },
+      {
+        "codigo": "810",
+        "nombre": "TIQUISIO"
+      },
+      {
+        "codigo": "836",
+        "nombre": "TURBACO"
+      },
+      {
+        "codigo": "838",
+        "nombre": "TURBANA"
+      },
+      {
+        "codigo": "873",
+        "nombre": "VILLANUEVA"
+      },
+      {
+        "codigo": "894",
+        "nombre": "ZAMBRANO"
+      }
+    ],
+    "15": [
+      {
+        "codigo": "22",
+        "nombre": "ALMEIDA"
+      },
+      {
+        "codigo": "47",
+        "nombre": "AQUITANIA"
+      },
+      {
+        "codigo": "51",
+        "nombre": "ARCABUCO"
+      },
+      {
+        "codigo": "87",
+        "nombre": "BELEN"
+      },
+      {
+        "codigo": "90",
+        "nombre": "BERBEO"
+      },
+      {
+        "codigo": "92",
+        "nombre": "BETEITIVA"
+      },
+      {
+        "codigo": "97",
+        "nombre": "BOAVITA"
+      },
+      {
+        "codigo": "104",
+        "nombre": "BOYACA"
+      },
+      {
+        "codigo": "106",
+        "nombre": "BRICEÑO"
+      },
+      {
+        "codigo": "109",
+        "nombre": "BUENAVISTA"
+      },
+      {
+        "codigo": "114",
+        "nombre": "BUSBANZA"
+      },
+      {
+        "codigo": "131",
+        "nombre": "CALDAS"
+      },
+      {
+        "codigo": "135",
+        "nombre": "CAMPOHERMOSO"
+      },
+      {
+        "codigo": "162",
+        "nombre": "CERINZA"
+      },
+      {
+        "codigo": "172",
+        "nombre": "CHINAVITA"
+      },
+      {
+        "codigo": "176",
+        "nombre": "CHIQUINQUIRA"
+      },
+      {
+        "codigo": "232",
+        "nombre": "CHIQUIZA"
+      },
+      {
+        "codigo": "180",
+        "nombre": "CHISCAS"
+      },
+      {
+        "codigo": "183",
+        "nombre": "CHITA"
+      },
+      {
+        "codigo": "185",
+        "nombre": "CHITARAQUE"
+      },
+      {
+        "codigo": "187",
+        "nombre": "CHIVATA"
+      },
+      {
+        "codigo": "236",
+        "nombre": "CHIVOR"
+      },
+      {
+        "codigo": "189",
+        "nombre": "CIENEGA"
+      },
+      {
+        "codigo": "204",
+        "nombre": "COMBITA"
+      },
+      {
+        "codigo": "212",
+        "nombre": "COPER"
+      },
+      {
+        "codigo": "215",
+        "nombre": "CORRALES"
+      },
+      {
+        "codigo": "218",
+        "nombre": "COVARACHIA"
+      },
+      {
+        "codigo": "223",
+        "nombre": "CUBARA"
+      },
+      {
+        "codigo": "224",
+        "nombre": "CUCAITA"
+      },
+      {
+        "codigo": "226",
+        "nombre": "CUITIVA"
+      },
+      {
+        "codigo": "238",
+        "nombre": "DUITAMA"
+      },
+      {
+        "codigo": "244",
+        "nombre": "EL COCUY"
+      },
+      {
+        "codigo": "248",
+        "nombre": "EL ESPINO"
+      },
+      {
+        "codigo": "272",
+        "nombre": "FIRAVITOBA"
+      },
+      {
+        "codigo": "276",
+        "nombre": "FLORESTA"
+      },
+      {
+        "codigo": "293",
+        "nombre": "GACHANTIVA"
+      },
+      {
+        "codigo": "296",
+        "nombre": "GAMEZA"
+      },
+      {
+        "codigo": "299",
+        "nombre": "GARAGOA"
+      },
+      {
+        "codigo": "317",
+        "nombre": "GUACAMAYAS"
+      },
+      {
+        "codigo": "322",
+        "nombre": "GUATEQUE"
+      },
+      {
+        "codigo": "325",
+        "nombre": "GUAYATA"
+      },
+      {
+        "codigo": "332",
+        "nombre": "GsICAN"
+      },
+      {
+        "codigo": "362",
+        "nombre": "IZA"
+      },
+      {
+        "codigo": "367",
+        "nombre": "JENESANO"
+      },
+      {
+        "codigo": "368",
+        "nombre": "JERICO"
+      },
+      {
+        "codigo": "380",
+        "nombre": "LA CAPILLA"
+      },
+      {
+        "codigo": "403",
+        "nombre": "LA UVITA"
+      },
+      {
+        "codigo": "401",
+        "nombre": "LA VICTORIA"
+      },
+      {
+        "codigo": "377",
+        "nombre": "LABRANZAGRANDE"
+      },
+      {
+        "codigo": "425",
+        "nombre": "MACANAL"
+      },
+      {
+        "codigo": "442",
+        "nombre": "MARIPI"
+      },
+      {
+        "codigo": "455",
+        "nombre": "MIRAFLORES"
+      },
+      {
+        "codigo": "464",
+        "nombre": "MONGUA"
+      },
+      {
+        "codigo": "466",
+        "nombre": "MONGUI"
+      },
+      {
+        "codigo": "469",
+        "nombre": "MONIQUIRA"
+      },
+      {
+        "codigo": "476",
+        "nombre": "MOTAVITA"
+      },
+      {
+        "codigo": "480",
+        "nombre": "MUZO"
+      },
+      {
+        "codigo": "491",
+        "nombre": "NOBSA"
+      },
+      {
+        "codigo": "494",
+        "nombre": "NUEVO COLON"
+      },
+      {
+        "codigo": "500",
+        "nombre": "OICATA"
+      },
+      {
+        "codigo": "507",
+        "nombre": "OTANCHE"
+      },
+      {
+        "codigo": "511",
+        "nombre": "PACHAVITA"
+      },
+      {
+        "codigo": "514",
+        "nombre": "PAEZ"
+      },
+      {
+        "codigo": "516",
+        "nombre": "PAIPA"
+      },
+      {
+        "codigo": "518",
+        "nombre": "PAJARITO"
+      },
+      {
+        "codigo": "522",
+        "nombre": "PANQUEBA"
+      },
+      {
+        "codigo": "531",
+        "nombre": "PAUNA"
+      },
+      {
+        "codigo": "533",
+        "nombre": "PAYA"
+      },
+      {
+        "codigo": "537",
+        "nombre": "PAZ DE RIO"
+      },
+      {
+        "codigo": "542",
+        "nombre": "PESCA"
+      },
+      {
+        "codigo": "550",
+        "nombre": "PISBA"
+      },
+      {
+        "codigo": "572",
+        "nombre": "PUERTO BOYACA"
+      },
+      {
+        "codigo": "580",
+        "nombre": "QUIPAMA"
+      },
+      {
+        "codigo": "599",
+        "nombre": "RAMIRIQUI"
+      },
+      {
+        "codigo": "600",
+        "nombre": "RAQUIRA"
+      },
+      {
+        "codigo": "621",
+        "nombre": "RONDON"
+      },
+      {
+        "codigo": "632",
+        "nombre": "SABOYA"
+      },
+      {
+        "codigo": "638",
+        "nombre": "SACHICA"
+      },
+      {
+        "codigo": "646",
+        "nombre": "SAMACA"
+      },
+      {
+        "codigo": "660",
+        "nombre": "SAN EDUARDO"
+      },
+      {
+        "codigo": "664",
+        "nombre": "SAN JOSE DE PARE"
+      },
+      {
+        "codigo": "667",
+        "nombre": "SAN LUIS DE GACENO"
+      },
+      {
+        "codigo": "673",
+        "nombre": "SAN MATEO"
+      },
+      {
+        "codigo": "676",
+        "nombre": "SAN MIGUEL DE SEMA"
+      },
+      {
+        "codigo": "681",
+        "nombre": "SAN PABLO DE BORBUR"
+      },
+      {
+        "codigo": "690",
+        "nombre": "SANTA MARIA"
+      },
+      {
+        "codigo": "693",
+        "nombre": "SANTA ROSA DE VITERBO"
+      },
+      {
+        "codigo": "696",
+        "nombre": "SANTA SOFIA"
+      },
+      {
+        "codigo": "686",
+        "nombre": "SANTANA"
+      },
+      {
+        "codigo": "720",
+        "nombre": "SATIVANORTE"
+      },
+      {
+        "codigo": "723",
+        "nombre": "SATIVASUR"
+      },
+      {
+        "codigo": "740",
+        "nombre": "SIACHOQUE"
+      },
+      {
+        "codigo": "753",
+        "nombre": "SOATA"
+      },
+      {
+        "codigo": "757",
+        "nombre": "SOCHA"
+      },
+      {
+        "codigo": "755",
+        "nombre": "SOCOTA"
+      },
+      {
+        "codigo": "759",
+        "nombre": "SOGAMOSO"
+      },
+      {
+        "codigo": "761",
+        "nombre": "SOMONDOCO"
+      },
+      {
+        "codigo": "762",
+        "nombre": "SORA"
+      },
+      {
+        "codigo": "764",
+        "nombre": "SORACA"
+      },
+      {
+        "codigo": "763",
+        "nombre": "SOTAQUIRA"
+      },
+      {
+        "codigo": "774",
+        "nombre": "SUSACON"
+      },
+      {
+        "codigo": "776",
+        "nombre": "SUTAMARCHAN"
+      },
+      {
+        "codigo": "778",
+        "nombre": "SUTATENZA"
+      },
+      {
+        "codigo": "790",
+        "nombre": "TASCO"
+      },
+      {
+        "codigo": "798",
+        "nombre": "TENZA"
+      },
+      {
+        "codigo": "804",
+        "nombre": "TIBANA"
+      },
+      {
+        "codigo": "806",
+        "nombre": "TIBASOSA"
+      },
+      {
+        "codigo": "808",
+        "nombre": "TINJACA"
+      },
+      {
+        "codigo": "810",
+        "nombre": "TIPACOQUE"
+      },
+      {
+        "codigo": "814",
+        "nombre": "TOCA"
+      },
+      {
+        "codigo": "816",
+        "nombre": "TOGsI"
+      },
+      {
+        "codigo": "820",
+        "nombre": "TOPAGA"
+      },
+      {
+        "codigo": "822",
+        "nombre": "TOTA"
+      },
+      {
+        "codigo": "1",
+        "nombre": "TUNJA"
+      },
+      {
+        "codigo": "832",
+        "nombre": "TUNUNGUA"
+      },
+      {
+        "codigo": "835",
+        "nombre": "TURMEQUE"
+      },
+      {
+        "codigo": "837",
+        "nombre": "TUTA"
+      },
+      {
+        "codigo": "839",
+        "nombre": "TUTAZA"
+      },
+      {
+        "codigo": "842",
+        "nombre": "UMBITA"
+      },
+      {
+        "codigo": "861",
+        "nombre": "VENTAQUEMADA"
+      },
+      {
+        "codigo": "407",
+        "nombre": "VILLA DE LEYVA"
+      },
+      {
+        "codigo": "879",
+        "nombre": "VIRACACHA"
+      },
+      {
+        "codigo": "897",
+        "nombre": "ZETAQUIRA"
+      }
+    ],
+    "17": [
+      {
+        "codigo": "13",
+        "nombre": "AGUADAS"
+      },
+      {
+        "codigo": "42",
+        "nombre": "ANSERMA"
+      },
+      {
+        "codigo": "50",
+        "nombre": "ARANZAZU"
+      },
+      {
+        "codigo": "88",
+        "nombre": "BELALCAZAR"
+      },
+      {
+        "codigo": "174",
+        "nombre": "CHINCHINA"
+      },
+      {
+        "codigo": "272",
+        "nombre": "FILADELFIA"
+      },
+      {
+        "codigo": "380",
+        "nombre": "LA DORADA"
+      },
+      {
+        "codigo": "388",
+        "nombre": "LA MERCED"
+      },
+      {
+        "codigo": "1",
+        "nombre": "MANIZALES"
+      },
+      {
+        "codigo": "433",
+        "nombre": "MANZANARES"
+      },
+      {
+        "codigo": "442",
+        "nombre": "MARMATO"
+      },
+      {
+        "codigo": "444",
+        "nombre": "MARQUETALIA"
+      },
+      {
+        "codigo": "446",
+        "nombre": "MARULANDA"
+      },
+      {
+        "codigo": "486",
+        "nombre": "NEIRA"
+      },
+      {
+        "codigo": "495",
+        "nombre": "NORCASIA"
+      },
+      {
+        "codigo": "513",
+        "nombre": "PACORA"
+      },
+      {
+        "codigo": "524",
+        "nombre": "PALESTINA"
+      },
+      {
+        "codigo": "541",
+        "nombre": "PENSILVANIA"
+      },
+      {
+        "codigo": "614",
+        "nombre": "RIOSUCIO"
+      },
+      {
+        "codigo": "616",
+        "nombre": "RISARALDA"
+      },
+      {
+        "codigo": "653",
+        "nombre": "SALAMINA"
+      },
+      {
+        "codigo": "662",
+        "nombre": "SAMANA"
+      },
+      {
+        "codigo": "665",
+        "nombre": "SAN JOSE"
+      },
+      {
+        "codigo": "777",
+        "nombre": "SUPIA"
+      },
+      {
+        "codigo": "867",
+        "nombre": "VICTORIA"
+      },
+      {
+        "codigo": "873",
+        "nombre": "VILLAMARIA"
+      },
+      {
+        "codigo": "877",
+        "nombre": "VITERBO"
+      }
+    ],
+    "18": [
+      {
+        "codigo": "29",
+        "nombre": "ALBANIA"
+      },
+      {
+        "codigo": "94",
+        "nombre": "BELEN DE LOS ANDAQUIES"
+      },
+      {
+        "codigo": "150",
+        "nombre": "CARTAGENA DEL CHAIRA"
+      },
+      {
+        "codigo": "205",
+        "nombre": "CURILLO"
+      },
+      {
+        "codigo": "247",
+        "nombre": "EL DONCELLO"
+      },
+      {
+        "codigo": "256",
+        "nombre": "EL PAUJIL"
+      },
+      {
+        "codigo": "1",
+        "nombre": "FLORENCIA"
+      },
+      {
+        "codigo": "410",
+        "nombre": "LA MONTAÑITA"
+      },
+      {
+        "codigo": "460",
+        "nombre": "MILAN"
+      },
+      {
+        "codigo": "479",
+        "nombre": "MORELIA"
+      },
+      {
+        "codigo": "592",
+        "nombre": "PUERTO RICO"
+      },
+      {
+        "codigo": "610",
+        "nombre": "SAN JOSE DEL FRAGUA"
+      },
+      {
+        "codigo": "753",
+        "nombre": "SAN VICENTE DEL CAGUAN"
+      },
+      {
+        "codigo": "756",
+        "nombre": "SOLANO"
+      },
+      {
+        "codigo": "785",
+        "nombre": "SOLITA"
+      },
+      {
+        "codigo": "860",
+        "nombre": "VALPARAISO"
+      }
+    ],
+    "19": [
+      {
+        "codigo": "22",
+        "nombre": "ALMAGUER"
+      },
+      {
+        "codigo": "50",
+        "nombre": "ARGELIA"
+      },
+      {
+        "codigo": "75",
+        "nombre": "BALBOA"
+      },
+      {
+        "codigo": "100",
+        "nombre": "BOLIVAR"
+      },
+      {
+        "codigo": "110",
+        "nombre": "BUENOS AIRES"
+      },
+      {
+        "codigo": "130",
+        "nombre": "CAJIBIO"
+      },
+      {
+        "codigo": "137",
+        "nombre": "CALDONO"
+      },
+      {
+        "codigo": "142",
+        "nombre": "CALOTO"
+      },
+      {
+        "codigo": "212",
+        "nombre": "CORINTO"
+      },
+      {
+        "codigo": "256",
+        "nombre": "EL TAMBO"
+      },
+      {
+        "codigo": "290",
+        "nombre": "FLORENCIA"
+      },
+      {
+        "codigo": "300",
+        "nombre": "GUACHENE"
+      },
+      {
+        "codigo": "318",
+        "nombre": "GUAPI"
+      },
+      {
+        "codigo": "355",
+        "nombre": "INZA"
+      },
+      {
+        "codigo": "364",
+        "nombre": "JAMBALO"
+      },
+      {
+        "codigo": "392",
+        "nombre": "LA SIERRA"
+      },
+      {
+        "codigo": "397",
+        "nombre": "LA VEGA"
+      },
+      {
+        "codigo": "418",
+        "nombre": "LOPEZ"
+      },
+      {
+        "codigo": "450",
+        "nombre": "MERCADERES"
+      },
+      {
+        "codigo": "455",
+        "nombre": "MIRANDA"
+      },
+      {
+        "codigo": "473",
+        "nombre": "MORALES"
+      },
+      {
+        "codigo": "513",
+        "nombre": "PADILLA"
+      },
+      {
+        "codigo": "517",
+        "nombre": "PAEZ"
+      },
+      {
+        "codigo": "532",
+        "nombre": "PATIA"
+      },
+      {
+        "codigo": "533",
+        "nombre": "PIAMONTE"
+      },
+      {
+        "codigo": "548",
+        "nombre": "PIENDAMO"
+      },
+      {
+        "codigo": "1",
+        "nombre": "POPAYAN"
+      },
+      {
+        "codigo": "573",
+        "nombre": "PUERTO TEJADA"
+      },
+      {
+        "codigo": "585",
+        "nombre": "PURACE"
+      },
+      {
+        "codigo": "622",
+        "nombre": "ROSAS"
+      },
+      {
+        "codigo": "693",
+        "nombre": "SAN SEBASTIAN"
+      },
+      {
+        "codigo": "701",
+        "nombre": "SANTA ROSA"
+      },
+      {
+        "codigo": "698",
+        "nombre": "SANTANDER DE QUILICHAO"
+      },
+      {
+        "codigo": "743",
+        "nombre": "SILVIA"
+      },
+      {
+        "codigo": "760",
+        "nombre": "SOTARA"
+      },
+      {
+        "codigo": "780",
+        "nombre": "SUAREZ"
+      },
+      {
+        "codigo": "785",
+        "nombre": "SUCRE"
+      },
+      {
+        "codigo": "807",
+        "nombre": "TIMBIO"
+      },
+      {
+        "codigo": "809",
+        "nombre": "TIMBIQUI"
+      },
+      {
+        "codigo": "821",
+        "nombre": "TORIBIO"
+      },
+      {
+        "codigo": "824",
+        "nombre": "TOTORO"
+      },
+      {
+        "codigo": "845",
+        "nombre": "VILLA RICA"
+      }
+    ],
+    "20": [
+      {
+        "codigo": "11",
+        "nombre": "AGUACHICA"
+      },
+      {
+        "codigo": "13",
+        "nombre": "AGUSTIN CODAZZI"
+      },
+      {
+        "codigo": "32",
+        "nombre": "ASTREA"
+      },
+      {
+        "codigo": "45",
+        "nombre": "BECERRIL"
+      },
+      {
+        "codigo": "60",
+        "nombre": "BOSCONIA"
+      },
+      {
+        "codigo": "175",
+        "nombre": "CHIMICHAGUA"
+      },
+      {
+        "codigo": "178",
+        "nombre": "CHIRIGUANA"
+      },
+      {
+        "codigo": "228",
+        "nombre": "CURUMANI"
+      },
+      {
+        "codigo": "238",
+        "nombre": "EL COPEY"
+      },
+      {
+        "codigo": "250",
+        "nombre": "EL PASO"
+      },
+      {
+        "codigo": "295",
+        "nombre": "GAMARRA"
+      },
+      {
+        "codigo": "310",
+        "nombre": "GONZALEZ"
+      },
+      {
+        "codigo": "383",
+        "nombre": "LA GLORIA"
+      },
+      {
+        "codigo": "400",
+        "nombre": "LA JAGUA DE IBIRICO"
+      },
+      {
+        "codigo": "621",
+        "nombre": "LA PAZ"
+      },
+      {
+        "codigo": "443",
+        "nombre": "MANAURE"
+      },
+      {
+        "codigo": "517",
+        "nombre": "PAILITAS"
+      },
+      {
+        "codigo": "550",
+        "nombre": "PELAYA"
+      },
+      {
+        "codigo": "570",
+        "nombre": "PUEBLO BELLO"
+      },
+      {
+        "codigo": "614",
+        "nombre": "RIO DE ORO"
+      },
+      {
+        "codigo": "710",
+        "nombre": "SAN ALBERTO"
+      },
+      {
+        "codigo": "750",
+        "nombre": "SAN DIEGO"
+      },
+      {
+        "codigo": "770",
+        "nombre": "SAN MARTIN"
+      },
+      {
+        "codigo": "787",
+        "nombre": "TAMALAMEQUE"
+      },
+      {
+        "codigo": "1",
+        "nombre": "VALLEDUPAR"
+      }
+    ],
+    "23": [
+      {
+        "codigo": "68",
+        "nombre": "AYAPEL"
+      },
+      {
+        "codigo": "79",
+        "nombre": "BUENAVISTA"
+      },
+      {
+        "codigo": "90",
+        "nombre": "CANALETE"
+      },
+      {
+        "codigo": "162",
+        "nombre": "CERETE"
+      },
+      {
+        "codigo": "168",
+        "nombre": "CHIMA"
+      },
+      {
+        "codigo": "182",
+        "nombre": "CHINU"
+      },
+      {
+        "codigo": "189",
+        "nombre": "CIENAGA DE ORO"
+      },
+      {
+        "codigo": "300",
+        "nombre": "COTORRA"
+      },
+      {
+        "codigo": "350",
+        "nombre": "LA APARTADA"
+      },
+      {
+        "codigo": "417",
+        "nombre": "LORICA"
+      },
+      {
+        "codigo": "419",
+        "nombre": "LOS CORDOBAS"
+      },
+      {
+        "codigo": "464",
+        "nombre": "MOMIL"
+      },
+      {
+        "codigo": "466",
+        "nombre": "MONTELIBANO"
+      },
+      {
+        "codigo": "1",
+        "nombre": "MONTERIA"
+      },
+      {
+        "codigo": "500",
+        "nombre": "MOÑITOS"
+      },
+      {
+        "codigo": "555",
+        "nombre": "PLANETA RICA"
+      },
+      {
+        "codigo": "570",
+        "nombre": "PUEBLO NUEVO"
+      },
+      {
+        "codigo": "574",
+        "nombre": "PUERTO ESCONDIDO"
+      },
+      {
+        "codigo": "580",
+        "nombre": "PUERTO LIBERTADOR"
+      },
+      {
+        "codigo": "586",
+        "nombre": "PURISIMA"
+      },
+      {
+        "codigo": "660",
+        "nombre": "SAHAGUN"
+      },
+      {
+        "codigo": "670",
+        "nombre": "SAN ANDRES SOTAVENTO"
+      },
+      {
+        "codigo": "672",
+        "nombre": "SAN ANTERO"
+      },
+      {
+        "codigo": "675",
+        "nombre": "SAN BERNARDO DEL VIENTO"
+      },
+      {
+        "codigo": "678",
+        "nombre": "SAN CARLOS"
+      },
+      {
+        "codigo": "686",
+        "nombre": "SAN PELAYO"
+      },
+      {
+        "codigo": "807",
+        "nombre": "TIERRALTA"
+      },
+      {
+        "codigo": "855",
+        "nombre": "VALENCIA"
+      }
+    ],
+    "25": [
+      {
+        "codigo": "1",
+        "nombre": "AGUA DE DIOS"
+      },
+      {
+        "codigo": "19",
+        "nombre": "ALBAN"
+      },
+      {
+        "codigo": "35",
+        "nombre": "ANAPOIMA"
+      },
+      {
+        "codigo": "40",
+        "nombre": "ANOLAIMA"
+      },
+      {
+        "codigo": "599",
+        "nombre": "APULO"
+      },
+      {
+        "codigo": "53",
+        "nombre": "ARBELAEZ"
+      },
+      {
+        "codigo": "86",
+        "nombre": "BELTRAN"
+      },
+      {
+        "codigo": "95",
+        "nombre": "BITUIMA"
+      },
+      {
+        "codigo": "99",
+        "nombre": "BOJACA"
+      },
+      {
+        "codigo": "120",
+        "nombre": "CABRERA"
+      },
+      {
+        "codigo": "123",
+        "nombre": "CACHIPAY"
+      },
+      {
+        "codigo": "126",
+        "nombre": "CAJICA"
+      },
+      {
+        "codigo": "148",
+        "nombre": "CAPARRAPI"
+      },
+      {
+        "codigo": "151",
+        "nombre": "CAQUEZA"
+      },
+      {
+        "codigo": "154",
+        "nombre": "CARMEN DE CARUPA"
+      },
+      {
+        "codigo": "168",
+        "nombre": "CHAGUANI"
+      },
+      {
+        "codigo": "175",
+        "nombre": "CHIA"
+      },
+      {
+        "codigo": "178",
+        "nombre": "CHIPAQUE"
+      },
+      {
+        "codigo": "181",
+        "nombre": "CHOACHI"
+      },
+      {
+        "codigo": "183",
+        "nombre": "CHOCONTA"
+      },
+      {
+        "codigo": "200",
+        "nombre": "COGUA"
+      },
+      {
+        "codigo": "214",
+        "nombre": "COTA"
+      },
+      {
+        "codigo": "224",
+        "nombre": "CUCUNUBA"
+      },
+      {
+        "codigo": "245",
+        "nombre": "EL COLEGIO"
+      },
+      {
+        "codigo": "258",
+        "nombre": "EL PEÑON"
+      },
+      {
+        "codigo": "260",
+        "nombre": "EL ROSAL"
+      },
+      {
+        "codigo": "269",
+        "nombre": "FACATATIVA"
+      },
+      {
+        "codigo": "279",
+        "nombre": "FOMEQUE"
+      },
+      {
+        "codigo": "281",
+        "nombre": "FOSCA"
+      },
+      {
+        "codigo": "286",
+        "nombre": "FUNZA"
+      },
+      {
+        "codigo": "288",
+        "nombre": "FUQUENE"
+      },
+      {
+        "codigo": "290",
+        "nombre": "FUSAGASUGA"
+      },
+      {
+        "codigo": "293",
+        "nombre": "GACHALA"
+      },
+      {
+        "codigo": "295",
+        "nombre": "GACHANCIPA"
+      },
+      {
+        "codigo": "297",
+        "nombre": "GACHETA"
+      },
+      {
+        "codigo": "299",
+        "nombre": "GAMA"
+      },
+      {
+        "codigo": "307",
+        "nombre": "GIRARDOT"
+      },
+      {
+        "codigo": "312",
+        "nombre": "GRANADA"
+      },
+      {
+        "codigo": "317",
+        "nombre": "GUACHETA"
+      },
+      {
+        "codigo": "320",
+        "nombre": "GUADUAS"
+      },
+      {
+        "codigo": "322",
+        "nombre": "GUASCA"
+      },
+      {
+        "codigo": "324",
+        "nombre": "GUATAQUI"
+      },
+      {
+        "codigo": "326",
+        "nombre": "GUATAVITA"
+      },
+      {
+        "codigo": "328",
+        "nombre": "GUAYABAL DE SIQUIMA"
+      },
+      {
+        "codigo": "335",
+        "nombre": "GUAYABETAL"
+      },
+      {
+        "codigo": "339",
+        "nombre": "GUTIERREZ"
+      },
+      {
+        "codigo": "368",
+        "nombre": "JERUSALEN"
+      },
+      {
+        "codigo": "372",
+        "nombre": "JUNIN"
+      },
+      {
+        "codigo": "377",
+        "nombre": "LA CALERA"
+      },
+      {
+        "codigo": "386",
+        "nombre": "LA MESA"
+      },
+      {
+        "codigo": "394",
+        "nombre": "LA PALMA"
+      },
+      {
+        "codigo": "398",
+        "nombre": "LA PEÑA"
+      },
+      {
+        "codigo": "402",
+        "nombre": "LA VEGA"
+      },
+      {
+        "codigo": "407",
+        "nombre": "LENGUAZAQUE"
+      },
+      {
+        "codigo": "426",
+        "nombre": "MACHETA"
+      },
+      {
+        "codigo": "430",
+        "nombre": "MADRID"
+      },
+      {
+        "codigo": "436",
+        "nombre": "MANTA"
+      },
+      {
+        "codigo": "438",
+        "nombre": "MEDINA"
+      },
+      {
+        "codigo": "473",
+        "nombre": "MOSQUERA"
+      },
+      {
+        "codigo": "483",
+        "nombre": "NARIÑO"
+      },
+      {
+        "codigo": "486",
+        "nombre": "NEMOCON"
+      },
+      {
+        "codigo": "488",
+        "nombre": "NILO"
+      },
+      {
+        "codigo": "489",
+        "nombre": "NIMAIMA"
+      },
+      {
+        "codigo": "491",
+        "nombre": "NOCAIMA"
+      },
+      {
+        "codigo": "513",
+        "nombre": "PACHO"
+      },
+      {
+        "codigo": "518",
+        "nombre": "PAIME"
+      },
+      {
+        "codigo": "524",
+        "nombre": "PANDI"
+      },
+      {
+        "codigo": "530",
+        "nombre": "PARATEBUENO"
+      },
+      {
+        "codigo": "535",
+        "nombre": "PASCA"
+      },
+      {
+        "codigo": "572",
+        "nombre": "PUERTO SALGAR"
+      },
+      {
+        "codigo": "580",
+        "nombre": "PULI"
+      },
+      {
+        "codigo": "592",
+        "nombre": "QUEBRADANEGRA"
+      },
+      {
+        "codigo": "594",
+        "nombre": "QUETAME"
+      },
+      {
+        "codigo": "596",
+        "nombre": "QUIPILE"
+      },
+      {
+        "codigo": "612",
+        "nombre": "RICAURTE"
+      },
+      {
+        "codigo": "645",
+        "nombre": "SAN ANTONIO DEL TEQUENDA"
+      },
+      {
+        "codigo": "649",
+        "nombre": "SAN BERNARDO"
+      },
+      {
+        "codigo": "653",
+        "nombre": "SAN CAYETANO"
+      },
+      {
+        "codigo": "658",
+        "nombre": "SAN FRANCISCO"
+      },
+      {
+        "codigo": "662",
+        "nombre": "SAN JUAN DE RIO SECO"
+      },
+      {
+        "codigo": "718",
+        "nombre": "SASAIMA"
+      },
+      {
+        "codigo": "736",
+        "nombre": "SESQUILE"
+      },
+      {
+        "codigo": "740",
+        "nombre": "SIBATE"
+      },
+      {
+        "codigo": "743",
+        "nombre": "SILVANIA"
+      },
+      {
+        "codigo": "745",
+        "nombre": "SIMIJACA"
+      },
+      {
+        "codigo": "754",
+        "nombre": "SOACHA"
+      },
+      {
+        "codigo": "758",
+        "nombre": "SOPO"
+      },
+      {
+        "codigo": "769",
+        "nombre": "SUBACHOQUE"
+      },
+      {
+        "codigo": "772",
+        "nombre": "SUESCA"
+      },
+      {
+        "codigo": "777",
+        "nombre": "SUPATA"
+      },
+      {
+        "codigo": "779",
+        "nombre": "SUSA"
+      },
+      {
+        "codigo": "781",
+        "nombre": "SUTATAUSA"
+      },
+      {
+        "codigo": "785",
+        "nombre": "TABIO"
+      },
+      {
+        "codigo": "793",
+        "nombre": "TAUSA"
+      },
+      {
+        "codigo": "797",
+        "nombre": "TENA"
+      },
+      {
+        "codigo": "799",
+        "nombre": "TENJO"
+      },
+      {
+        "codigo": "805",
+        "nombre": "TIBACUY"
+      },
+      {
+        "codigo": "807",
+        "nombre": "TIBIRITA"
+      },
+      {
+        "codigo": "815",
+        "nombre": "TOCAIMA"
+      },
+      {
+        "codigo": "817",
+        "nombre": "TOCANCIPA"
+      },
+      {
+        "codigo": "823",
+        "nombre": "TOPAIPI"
+      },
+      {
+        "codigo": "839",
+        "nombre": "UBALA"
+      },
+      {
+        "codigo": "841",
+        "nombre": "UBAQUE"
+      },
+      {
+        "codigo": "845",
+        "nombre": "UNE"
+      },
+      {
+        "codigo": "851",
+        "nombre": "UTICA"
+      },
+      {
+        "codigo": "506",
+        "nombre": "VENECIA"
+      },
+      {
+        "codigo": "862",
+        "nombre": "VERGARA"
+      },
+      {
+        "codigo": "867",
+        "nombre": "VIANI"
+      },
+      {
+        "codigo": "843",
+        "nombre": "VILLA DE SAN DIEGO DE UBAT"
+      },
+      {
+        "codigo": "871",
+        "nombre": "VILLAGOMEZ"
+      },
+      {
+        "codigo": "873",
+        "nombre": "VILLAPINZON"
+      },
+      {
+        "codigo": "875",
+        "nombre": "VILLETA"
+      },
+      {
+        "codigo": "878",
+        "nombre": "VIOTA"
+      },
+      {
+        "codigo": "885",
+        "nombre": "YACOPI"
+      },
+      {
+        "codigo": "898",
+        "nombre": "ZIPACON"
+      },
+      {
+        "codigo": "899",
+        "nombre": "ZIPAQUIRA"
+      }
+    ],
+    "27": [
+      {
+        "codigo": "6",
+        "nombre": "ACANDI"
+      },
+      {
+        "codigo": "25",
+        "nombre": "ALTO BAUDO"
+      },
+      {
+        "codigo": "50",
+        "nombre": "ATRATO"
+      },
+      {
+        "codigo": "73",
+        "nombre": "BAGADO"
+      },
+      {
+        "codigo": "75",
+        "nombre": "BAHIA SOLANO"
+      },
+      {
+        "codigo": "77",
+        "nombre": "BAJO BAUDO"
+      },
+      {
+        "codigo": "99",
+        "nombre": "BOJAYA"
+      },
+      {
+        "codigo": "150",
+        "nombre": "CARMEN DEL DARIEN"
+      },
+      {
+        "codigo": "160",
+        "nombre": "CERTEGUI"
+      },
+      {
+        "codigo": "205",
+        "nombre": "CONDOTO"
+      },
+      {
+        "codigo": "135",
+        "nombre": "EL CANTON DEL SAN PABLO"
+      },
+      {
+        "codigo": "245",
+        "nombre": "EL CARMEN DE ATRATO"
+      },
+      {
+        "codigo": "250",
+        "nombre": "EL LITORAL DEL SAN JUAN"
+      },
+      {
+        "codigo": "361",
+        "nombre": "ISTMINA"
+      },
+      {
+        "codigo": "372",
+        "nombre": "JURADO"
+      },
+      {
+        "codigo": "413",
+        "nombre": "LLORO"
+      },
+      {
+        "codigo": "425",
+        "nombre": "MEDIO ATRATO"
+      },
+      {
+        "codigo": "430",
+        "nombre": "MEDIO BAUDO"
+      },
+      {
+        "codigo": "450",
+        "nombre": "MEDIO SAN JUAN"
+      },
+      {
+        "codigo": "491",
+        "nombre": "NOVITA"
+      },
+      {
+        "codigo": "495",
+        "nombre": "NUQUI"
+      },
+      {
+        "codigo": "1",
+        "nombre": "QUIBDO"
+      },
+      {
+        "codigo": "580",
+        "nombre": "RIO IRO"
+      },
+      {
+        "codigo": "600",
+        "nombre": "RIO QUITO"
+      },
+      {
+        "codigo": "615",
+        "nombre": "RIOSUCIO"
+      },
+      {
+        "codigo": "660",
+        "nombre": "SAN JOSE DEL PALMAR"
+      },
+      {
+        "codigo": "745",
+        "nombre": "SIPI"
+      },
+      {
+        "codigo": "787",
+        "nombre": "TADO"
+      },
+      {
+        "codigo": "800",
+        "nombre": "UNGUIA"
+      },
+      {
+        "codigo": "810",
+        "nombre": "UNION PANAMERICANA"
+      }
+    ],
+    "41": [
+      {
+        "codigo": "6",
+        "nombre": "ACEVEDO"
+      },
+      {
+        "codigo": "13",
+        "nombre": "AGRADO"
+      },
+      {
+        "codigo": "16",
+        "nombre": "AIPE"
+      },
+      {
+        "codigo": "20",
+        "nombre": "ALGECIRAS"
+      },
+      {
+        "codigo": "26",
+        "nombre": "ALTAMIRA"
+      },
+      {
+        "codigo": "78",
+        "nombre": "BARAYA"
+      },
+      {
+        "codigo": "132",
+        "nombre": "CAMPOALEGRE"
+      },
+      {
+        "codigo": "206",
+        "nombre": "COLOMBIA"
+      },
+      {
+        "codigo": "244",
+        "nombre": "ELIAS"
+      },
+      {
+        "codigo": "298",
+        "nombre": "GARZON"
+      },
+      {
+        "codigo": "306",
+        "nombre": "GIGANTE"
+      },
+      {
+        "codigo": "319",
+        "nombre": "GUADALUPE"
+      },
+      {
+        "codigo": "349",
+        "nombre": "HOBO"
+      },
+      {
+        "codigo": "357",
+        "nombre": "IQUIRA"
+      },
+      {
+        "codigo": "359",
+        "nombre": "ISNOS"
+      },
+      {
+        "codigo": "378",
+        "nombre": "LA ARGENTINA"
+      },
+      {
+        "codigo": "396",
+        "nombre": "LA PLATA"
+      },
+      {
+        "codigo": "483",
+        "nombre": "NATAGA"
+      },
+      {
+        "codigo": "1",
+        "nombre": "NEIVA"
+      },
+      {
+        "codigo": "503",
+        "nombre": "OPORAPA"
+      },
+      {
+        "codigo": "518",
+        "nombre": "PAICOL"
+      },
+      {
+        "codigo": "524",
+        "nombre": "PALERMO"
+      },
+      {
+        "codigo": "530",
+        "nombre": "PALESTINA"
+      },
+      {
+        "codigo": "548",
+        "nombre": "PITAL"
+      },
+      {
+        "codigo": "551",
+        "nombre": "PITALITO"
+      },
+      {
+        "codigo": "615",
+        "nombre": "RIVERA"
+      },
+      {
+        "codigo": "660",
+        "nombre": "SALADOBLANCO"
+      },
+      {
+        "codigo": "668",
+        "nombre": "SAN AGUSTIN"
+      },
+      {
+        "codigo": "676",
+        "nombre": "SANTA MARIA"
+      },
+      {
+        "codigo": "770",
+        "nombre": "SUAZA"
+      },
+      {
+        "codigo": "791",
+        "nombre": "TARQUI"
+      },
+      {
+        "codigo": "799",
+        "nombre": "TELLO"
+      },
+      {
+        "codigo": "801",
+        "nombre": "TERUEL"
+      },
+      {
+        "codigo": "797",
+        "nombre": "TESALIA"
+      },
+      {
+        "codigo": "807",
+        "nombre": "TIMANA"
+      },
+      {
+        "codigo": "872",
+        "nombre": "VILLAVIEJA"
+      },
+      {
+        "codigo": "885",
+        "nombre": "YAGUARA"
+      }
+    ],
+    "44": [
+      {
+        "codigo": "35",
+        "nombre": "ALBANIA"
+      },
+      {
+        "codigo": "78",
+        "nombre": "BARRANCAS"
+      },
+      {
+        "codigo": "90",
+        "nombre": "DIBULLA"
+      },
+      {
+        "codigo": "98",
+        "nombre": "DISTRACCION"
+      },
+      {
+        "codigo": "110",
+        "nombre": "EL MOLINO"
+      },
+      {
+        "codigo": "279",
+        "nombre": "FONSECA"
+      },
+      {
+        "codigo": "378",
+        "nombre": "HATONUEVO"
+      },
+      {
+        "codigo": "420",
+        "nombre": "LA JAGUA DEL PILAR"
+      },
+      {
+        "codigo": "430",
+        "nombre": "MAICAO"
+      },
+      {
+        "codigo": "560",
+        "nombre": "MANAURE"
+      },
+      {
+        "codigo": "1",
+        "nombre": "RIOHACHA"
+      },
+      {
+        "codigo": "650",
+        "nombre": "SAN JUAN DEL CESAR"
+      },
+      {
+        "codigo": "847",
+        "nombre": "URIBIA"
+      },
+      {
+        "codigo": "855",
+        "nombre": "URUMITA"
+      },
+      {
+        "codigo": "874",
+        "nombre": "VILLANUEVA"
+      }
+    ],
+    "47": [
+      {
+        "codigo": "30",
+        "nombre": "ALGARROBO"
+      },
+      {
+        "codigo": "53",
+        "nombre": "ARACATACA"
+      },
+      {
+        "codigo": "58",
+        "nombre": "ARIGUANI"
+      },
+      {
+        "codigo": "161",
+        "nombre": "CERRO SAN ANTONIO"
+      },
+      {
+        "codigo": "170",
+        "nombre": "CHIBOLO"
+      },
+      {
+        "codigo": "189",
+        "nombre": "CIENAGA"
+      },
+      {
+        "codigo": "205",
+        "nombre": "CONCORDIA"
+      },
+      {
+        "codigo": "245",
+        "nombre": "EL BANCO"
+      },
+      {
+        "codigo": "258",
+        "nombre": "EL PIÑON"
+      },
+      {
+        "codigo": "268",
+        "nombre": "EL RETEN"
+      },
+      {
+        "codigo": "288",
+        "nombre": "FUNDACION"
+      },
+      {
+        "codigo": "318",
+        "nombre": "GUAMAL"
+      },
+      {
+        "codigo": "460",
+        "nombre": "NUEVA GRANADA"
+      },
+      {
+        "codigo": "541",
+        "nombre": "PEDRAZA"
+      },
+      {
+        "codigo": "545",
+        "nombre": "PIJIÑO DEL CARMEN"
+      },
+      {
+        "codigo": "551",
+        "nombre": "PIVIJAY"
+      },
+      {
+        "codigo": "555",
+        "nombre": "PLATO"
+      },
+      {
+        "codigo": "570",
+        "nombre": "PUEBLOVIEJO"
+      },
+      {
+        "codigo": "605",
+        "nombre": "REMOLINO"
+      },
+      {
+        "codigo": "660",
+        "nombre": "SABANAS DE SAN ANGEL"
+      },
+      {
+        "codigo": "675",
+        "nombre": "SALAMINA"
+      },
+      {
+        "codigo": "692",
+        "nombre": "SAN SEBASTIAN DE BUENAVIS"
+      },
+      {
+        "codigo": "703",
+        "nombre": "SAN ZENON"
+      },
+      {
+        "codigo": "707",
+        "nombre": "SANTA ANA"
+      },
+      {
+        "codigo": "720",
+        "nombre": "SANTA BARBARA DE PINTO"
+      },
+      {
+        "codigo": "1",
+        "nombre": "SANTA MARTA"
+      },
+      {
+        "codigo": "745",
+        "nombre": "SITIONUEVO"
+      },
+      {
+        "codigo": "798",
+        "nombre": "TENERIFE"
+      },
+      {
+        "codigo": "960",
+        "nombre": "ZAPAYAN"
+      },
+      {
+        "codigo": "980",
+        "nombre": "ZONA BANANERA"
+      }
+    ],
+    "50": [
+      {
+        "codigo": "6",
+        "nombre": "ACACIAS"
+      },
+      {
+        "codigo": "110",
+        "nombre": "BARRANCA DE UPIA"
+      },
+      {
+        "codigo": "124",
+        "nombre": "CABUYARO"
+      },
+      {
+        "codigo": "150",
+        "nombre": "CASTILLA LA NUEVA"
+      },
+      {
+        "codigo": "223",
+        "nombre": "CUBARRAL"
+      },
+      {
+        "codigo": "226",
+        "nombre": "CUMARAL"
+      },
+      {
+        "codigo": "245",
+        "nombre": "EL CALVARIO"
+      },
+      {
+        "codigo": "251",
+        "nombre": "EL CASTILLO"
+      },
+      {
+        "codigo": "270",
+        "nombre": "EL DORADO"
+      },
+      {
+        "codigo": "287",
+        "nombre": "FUENTE DE ORO"
+      },
+      {
+        "codigo": "313",
+        "nombre": "GRANADA"
+      },
+      {
+        "codigo": "318",
+        "nombre": "GUAMAL"
+      },
+      {
+        "codigo": "350",
+        "nombre": "LA MACARENA"
+      },
+      {
+        "codigo": "400",
+        "nombre": "LEJANIAS"
+      },
+      {
+        "codigo": "325",
+        "nombre": "MAPIRIPAN"
+      },
+      {
+        "codigo": "330",
+        "nombre": "MESETAS"
+      },
+      {
+        "codigo": "450",
+        "nombre": "PUERTO CONCORDIA"
+      },
+      {
+        "codigo": "568",
+        "nombre": "PUERTO GAITAN"
+      },
+      {
+        "codigo": "577",
+        "nombre": "PUERTO LLERAS"
+      },
+      {
+        "codigo": "573",
+        "nombre": "PUERTO LOPEZ"
+      },
+      {
+        "codigo": "590",
+        "nombre": "PUERTO RICO"
+      },
+      {
+        "codigo": "606",
+        "nombre": "RESTREPO"
+      },
+      {
+        "codigo": "680",
+        "nombre": "SAN CARLOS DE GUAROA"
+      },
+      {
+        "codigo": "683",
+        "nombre": "SAN JUAN DE ARAMA"
+      },
+      {
+        "codigo": "686",
+        "nombre": "SAN JUANITO"
+      },
+      {
+        "codigo": "689",
+        "nombre": "SAN MARTIN"
+      },
+      {
+        "codigo": "370",
+        "nombre": "URIBE"
+      },
+      {
+        "codigo": "1",
+        "nombre": "VILLAVICENCIO"
+      },
+      {
+        "codigo": "711",
+        "nombre": "VISTAHERMOSA"
+      }
+    ],
+    "52": [
+      {
+        "codigo": "19",
+        "nombre": "ALBAN"
+      },
+      {
+        "codigo": "22",
+        "nombre": "ALDANA"
+      },
+      {
+        "codigo": "36",
+        "nombre": "ANCUYA"
+      },
+      {
+        "codigo": "51",
+        "nombre": "ARBOLEDA"
+      },
+      {
+        "codigo": "79",
+        "nombre": "BARBACOAS"
+      },
+      {
+        "codigo": "83",
+        "nombre": "BELEN"
+      },
+      {
+        "codigo": "110",
+        "nombre": "BUESACO"
+      },
+      {
+        "codigo": "240",
+        "nombre": "CHACHAGsI"
+      },
+      {
+        "codigo": "203",
+        "nombre": "COLON"
+      },
+      {
+        "codigo": "207",
+        "nombre": "CONSACA"
+      },
+      {
+        "codigo": "210",
+        "nombre": "CONTADERO"
+      },
+      {
+        "codigo": "215",
+        "nombre": "CORDOBA"
+      },
+      {
+        "codigo": "224",
+        "nombre": "CUASPUD"
+      },
+      {
+        "codigo": "227",
+        "nombre": "CUMBAL"
+      },
+      {
+        "codigo": "233",
+        "nombre": "CUMBITARA"
+      },
+      {
+        "codigo": "250",
+        "nombre": "EL CHARCO"
+      },
+      {
+        "codigo": "254",
+        "nombre": "EL PEÑOL"
+      },
+      {
+        "codigo": "256",
+        "nombre": "EL ROSARIO"
+      },
+      {
+        "codigo": "258",
+        "nombre": "EL TABLON DE GOMEZ"
+      },
+      {
+        "codigo": "260",
+        "nombre": "EL TAMBO"
+      },
+      {
+        "codigo": "520",
+        "nombre": "FRANCISCO PIZARRO"
+      },
+      {
+        "codigo": "287",
+        "nombre": "FUNES"
+      },
+      {
+        "codigo": "317",
+        "nombre": "GUACHUCAL"
+      },
+      {
+        "codigo": "320",
+        "nombre": "GUAITARILLA"
+      },
+      {
+        "codigo": "323",
+        "nombre": "GUALMATAN"
+      },
+      {
+        "codigo": "352",
+        "nombre": "ILES"
+      },
+      {
+        "codigo": "354",
+        "nombre": "IMUES"
+      },
+      {
+        "codigo": "356",
+        "nombre": "IPIALES"
+      },
+      {
+        "codigo": "378",
+        "nombre": "LA CRUZ"
+      },
+      {
+        "codigo": "381",
+        "nombre": "LA FLORIDA"
+      },
+      {
+        "codigo": "385",
+        "nombre": "LA LLANADA"
+      },
+      {
+        "codigo": "390",
+        "nombre": "LA TOLA"
+      },
+      {
+        "codigo": "399",
+        "nombre": "LA UNION"
+      },
+      {
+        "codigo": "405",
+        "nombre": "LEIVA"
+      },
+      {
+        "codigo": "411",
+        "nombre": "LINARES"
+      },
+      {
+        "codigo": "418",
+        "nombre": "LOS ANDES"
+      },
+      {
+        "codigo": "427",
+        "nombre": "MAGsI"
+      },
+      {
+        "codigo": "435",
+        "nombre": "MALLAMA"
+      },
+      {
+        "codigo": "473",
+        "nombre": "MOSQUERA"
+      },
+      {
+        "codigo": "480",
+        "nombre": "NARIÑO"
+      },
+      {
+        "codigo": "490",
+        "nombre": "OLAYA HERRERA"
+      },
+      {
+        "codigo": "506",
+        "nombre": "OSPINA"
+      },
+      {
+        "codigo": "1",
+        "nombre": "PASTO"
+      },
+      {
+        "codigo": "540",
+        "nombre": "POLICARPA"
+      },
+      {
+        "codigo": "560",
+        "nombre": "POTOSI"
+      },
+      {
+        "codigo": "565",
+        "nombre": "PROVIDENCIA"
+      },
+      {
+        "codigo": "573",
+        "nombre": "PUERRES"
+      },
+      {
+        "codigo": "585",
+        "nombre": "PUPIALES"
+      },
+      {
+        "codigo": "612",
+        "nombre": "RICAURTE"
+      },
+      {
+        "codigo": "621",
+        "nombre": "ROBERTO PAYAN"
+      },
+      {
+        "codigo": "678",
+        "nombre": "SAMANIEGO"
+      },
+      {
+        "codigo": "835",
+        "nombre": "SAN ANDRES DE TUMACO"
+      },
+      {
+        "codigo": "685",
+        "nombre": "SAN BERNARDO"
+      },
+      {
+        "codigo": "687",
+        "nombre": "SAN LORENZO"
+      },
+      {
+        "codigo": "693",
+        "nombre": "SAN PABLO"
+      },
+      {
+        "codigo": "694",
+        "nombre": "SAN PEDRO DE CARTAGO"
+      },
+      {
+        "codigo": "683",
+        "nombre": "SANDONA"
+      },
+      {
+        "codigo": "696",
+        "nombre": "SANTA BARBARA"
+      },
+      {
+        "codigo": "699",
+        "nombre": "SANTACRUZ"
+      },
+      {
+        "codigo": "720",
+        "nombre": "SAPUYES"
+      },
+      {
+        "codigo": "786",
+        "nombre": "TAMINANGO"
+      },
+      {
+        "codigo": "788",
+        "nombre": "TANGUA"
+      },
+      {
+        "codigo": "838",
+        "nombre": "TUQUERRES"
+      },
+      {
+        "codigo": "885",
+        "nombre": "YACUANQUER"
+      }
+    ],
+    "54": [
+      {
+        "codigo": "3",
+        "nombre": "ABREGO"
+      },
+      {
+        "codigo": "51",
+        "nombre": "ARBOLEDAS"
+      },
+      {
+        "codigo": "99",
+        "nombre": "BOCHALEMA"
+      },
+      {
+        "codigo": "109",
+        "nombre": "BUCARASICA"
+      },
+      {
+        "codigo": "128",
+        "nombre": "CACHIRA"
+      },
+      {
+        "codigo": "125",
+        "nombre": "CACOTA"
+      },
+      {
+        "codigo": "172",
+        "nombre": "CHINACOTA"
+      },
+      {
+        "codigo": "174",
+        "nombre": "CHITAGA"
+      },
+      {
+        "codigo": "206",
+        "nombre": "CONVENCION"
+      },
+      {
+        "codigo": "1",
+        "nombre": "CUCUTA"
+      },
+      {
+        "codigo": "223",
+        "nombre": "CUCUTILLA"
+      },
+      {
+        "codigo": "239",
+        "nombre": "DURANIA"
+      },
+      {
+        "codigo": "245",
+        "nombre": "EL CARMEN"
+      },
+      {
+        "codigo": "250",
+        "nombre": "EL TARRA"
+      },
+      {
+        "codigo": "261",
+        "nombre": "EL ZULIA"
+      },
+      {
+        "codigo": "313",
+        "nombre": "GRAMALOTE"
+      },
+      {
+        "codigo": "344",
+        "nombre": "HACARI"
+      },
+      {
+        "codigo": "347",
+        "nombre": "HERRAN"
+      },
+      {
+        "codigo": "385",
+        "nombre": "LA ESPERANZA"
+      },
+      {
+        "codigo": "398",
+        "nombre": "LA PLAYA"
+      },
+      {
+        "codigo": "377",
+        "nombre": "LABATECA"
+      },
+      {
+        "codigo": "405",
+        "nombre": "LOS PATIOS"
+      },
+      {
+        "codigo": "418",
+        "nombre": "LOURDES"
+      },
+      {
+        "codigo": "480",
+        "nombre": "MUTISCUA"
+      },
+      {
+        "codigo": "498",
+        "nombre": "OCAÑA"
+      },
+      {
+        "codigo": "518",
+        "nombre": "PAMPLONA"
+      },
+      {
+        "codigo": "520",
+        "nombre": "PAMPLONITA"
+      },
+      {
+        "codigo": "553",
+        "nombre": "PUERTO SANTANDER"
+      },
+      {
+        "codigo": "599",
+        "nombre": "RAGONVALIA"
+      },
+      {
+        "codigo": "660",
+        "nombre": "SALAZAR"
+      },
+      {
+        "codigo": "670",
+        "nombre": "SAN CALIXTO"
+      },
+      {
+        "codigo": "673",
+        "nombre": "SAN CAYETANO"
+      },
+      {
+        "codigo": "680",
+        "nombre": "SANTIAGO"
+      },
+      {
+        "codigo": "720",
+        "nombre": "SARDINATA"
+      },
+      {
+        "codigo": "743",
+        "nombre": "SILOS"
+      },
+      {
+        "codigo": "800",
+        "nombre": "TEORAMA"
+      },
+      {
+        "codigo": "810",
+        "nombre": "TIBU"
+      },
+      {
+        "codigo": "820",
+        "nombre": "TOLEDO"
+      },
+      {
+        "codigo": "871",
+        "nombre": "VILLA CARO"
+      },
+      {
+        "codigo": "874",
+        "nombre": "VILLA DEL ROSARIO"
+      }
+    ],
+    "63": [
+      {
+        "codigo": "1",
+        "nombre": "ARMENIA"
+      },
+      {
+        "codigo": "111",
+        "nombre": "BUENAVISTA"
+      },
+      {
+        "codigo": "130",
+        "nombre": "CALARCA"
+      },
+      {
+        "codigo": "190",
+        "nombre": "CIRCASIA"
+      },
+      {
+        "codigo": "212",
+        "nombre": "CORDOBA"
+      },
+      {
+        "codigo": "272",
+        "nombre": "FILANDIA"
+      },
+      {
+        "codigo": "302",
+        "nombre": "GENOVA"
+      },
+      {
+        "codigo": "401",
+        "nombre": "LA TEBAIDA"
+      },
+      {
+        "codigo": "470",
+        "nombre": "MONTENEGRO"
+      },
+      {
+        "codigo": "548",
+        "nombre": "PIJAO"
+      },
+      {
+        "codigo": "594",
+        "nombre": "QUIMBAYA"
+      },
+      {
+        "codigo": "690",
+        "nombre": "SALENTO"
+      }
+    ],
+    "66": [
+      {
+        "codigo": "45",
+        "nombre": "APIA"
+      },
+      {
+        "codigo": "75",
+        "nombre": "BALBOA"
+      },
+      {
+        "codigo": "88",
+        "nombre": "BELEN DE UMBRIA"
+      },
+      {
+        "codigo": "170",
+        "nombre": "DOSQUEBRADAS"
+      },
+      {
+        "codigo": "318",
+        "nombre": "GUATICA"
+      },
+      {
+        "codigo": "383",
+        "nombre": "LA CELIA"
+      },
+      {
+        "codigo": "400",
+        "nombre": "LA VIRGINIA"
+      },
+      {
+        "codigo": "440",
+        "nombre": "MARSELLA"
+      },
+      {
+        "codigo": "456",
+        "nombre": "MISTRATO"
+      },
+      {
+        "codigo": "1",
+        "nombre": "PEREIRA"
+      },
+      {
+        "codigo": "572",
+        "nombre": "PUEBLO RICO"
+      },
+      {
+        "codigo": "594",
+        "nombre": "QUINCHIA"
+      },
+      {
+        "codigo": "682",
+        "nombre": "SANTA ROSA DE CABAL"
+      },
+      {
+        "codigo": "687",
+        "nombre": "SANTUARIO"
+      }
+    ],
+    "68": [
+      {
+        "codigo": "13",
+        "nombre": "AGUADA"
+      },
+      {
+        "codigo": "20",
+        "nombre": "ALBANIA"
+      },
+      {
+        "codigo": "51",
+        "nombre": "ARATOCA"
+      },
+      {
+        "codigo": "77",
+        "nombre": "BARBOSA"
+      },
+      {
+        "codigo": "79",
+        "nombre": "BARICHARA"
+      },
+      {
+        "codigo": "81",
+        "nombre": "BARRANCABERMEJA"
+      },
+      {
+        "codigo": "92",
+        "nombre": "BETULIA"
+      },
+      {
+        "codigo": "101",
+        "nombre": "BOLIVAR"
+      },
+      {
+        "codigo": "1",
+        "nombre": "BUCARAMANGA"
+      },
+      {
+        "codigo": "121",
+        "nombre": "CABRERA"
+      },
+      {
+        "codigo": "132",
+        "nombre": "CALIFORNIA"
+      },
+      {
+        "codigo": "147",
+        "nombre": "CAPITANEJO"
+      },
+      {
+        "codigo": "152",
+        "nombre": "CARCASI"
+      },
+      {
+        "codigo": "160",
+        "nombre": "CEPITA"
+      },
+      {
+        "codigo": "162",
+        "nombre": "CERRITO"
+      },
+      {
+        "codigo": "167",
+        "nombre": "CHARALA"
+      },
+      {
+        "codigo": "169",
+        "nombre": "CHARTA"
+      },
+      {
+        "codigo": "176",
+        "nombre": "CHIMA"
+      },
+      {
+        "codigo": "179",
+        "nombre": "CHIPATA"
+      },
+      {
+        "codigo": "190",
+        "nombre": "CIMITARRA"
+      },
+      {
+        "codigo": "207",
+        "nombre": "CONCEPCION"
+      },
+      {
+        "codigo": "209",
+        "nombre": "CONFINES"
+      },
+      {
+        "codigo": "211",
+        "nombre": "CONTRATACION"
+      },
+      {
+        "codigo": "217",
+        "nombre": "COROMORO"
+      },
+      {
+        "codigo": "229",
+        "nombre": "CURITI"
+      },
+      {
+        "codigo": "235",
+        "nombre": "EL CARMEN DE CHUCURI"
+      },
+      {
+        "codigo": "245",
+        "nombre": "EL GUACAMAYO"
+      },
+      {
+        "codigo": "250",
+        "nombre": "EL PEÑON"
+      },
+      {
+        "codigo": "255",
+        "nombre": "EL PLAYON"
+      },
+      {
+        "codigo": "264",
+        "nombre": "ENCINO"
+      },
+      {
+        "codigo": "266",
+        "nombre": "ENCISO"
+      },
+      {
+        "codigo": "271",
+        "nombre": "FLORIAN"
+      },
+      {
+        "codigo": "276",
+        "nombre": "FLORIDABLANCA"
+      },
+      {
+        "codigo": "296",
+        "nombre": "GALAN"
+      },
+      {
+        "codigo": "298",
+        "nombre": "GAMBITA"
+      },
+      {
+        "codigo": "307",
+        "nombre": "GIRON"
+      },
+      {
+        "codigo": "318",
+        "nombre": "GUACA"
+      },
+      {
+        "codigo": "320",
+        "nombre": "GUADALUPE"
+      },
+      {
+        "codigo": "322",
+        "nombre": "GUAPOTA"
+      },
+      {
+        "codigo": "324",
+        "nombre": "GUAVATA"
+      },
+      {
+        "codigo": "327",
+        "nombre": "GsEPSA"
+      },
+      {
+        "codigo": "344",
+        "nombre": "HATO"
+      },
+      {
+        "codigo": "368",
+        "nombre": "JESUS MARIA"
+      },
+      {
+        "codigo": "370",
+        "nombre": "JORDAN"
+      },
+      {
+        "codigo": "377",
+        "nombre": "LA BELLEZA"
+      },
+      {
+        "codigo": "397",
+        "nombre": "LA PAZ"
+      },
+      {
+        "codigo": "385",
+        "nombre": "LANDAZURI"
+      },
+      {
+        "codigo": "406",
+        "nombre": "LEBRIJA"
+      },
+      {
+        "codigo": "418",
+        "nombre": "LOS SANTOS"
+      },
+      {
+        "codigo": "425",
+        "nombre": "MACARAVITA"
+      },
+      {
+        "codigo": "432",
+        "nombre": "MALAGA"
+      },
+      {
+        "codigo": "444",
+        "nombre": "MATANZA"
+      },
+      {
+        "codigo": "464",
+        "nombre": "MOGOTES"
+      },
+      {
+        "codigo": "468",
+        "nombre": "MOLAGAVITA"
+      },
+      {
+        "codigo": "498",
+        "nombre": "OCAMONTE"
+      },
+      {
+        "codigo": "500",
+        "nombre": "OIBA"
+      },
+      {
+        "codigo": "502",
+        "nombre": "ONZAGA"
+      },
+      {
+        "codigo": "522",
+        "nombre": "PALMAR"
+      },
+      {
+        "codigo": "524",
+        "nombre": "PALMAS DEL SOCORRO"
+      },
+      {
+        "codigo": "533",
+        "nombre": "PARAMO"
+      },
+      {
+        "codigo": "547",
+        "nombre": "PIEDECUESTA"
+      },
+      {
+        "codigo": "549",
+        "nombre": "PINCHOTE"
+      },
+      {
+        "codigo": "572",
+        "nombre": "PUENTE NACIONAL"
+      },
+      {
+        "codigo": "573",
+        "nombre": "PUERTO PARRA"
+      },
+      {
+        "codigo": "575",
+        "nombre": "PUERTO WILCHES"
+      },
+      {
+        "codigo": "615",
+        "nombre": "RIONEGRO"
+      },
+      {
+        "codigo": "655",
+        "nombre": "SABANA DE TORRES"
+      },
+      {
+        "codigo": "669",
+        "nombre": "SAN ANDRES"
+      },
+      {
+        "codigo": "673",
+        "nombre": "SAN BENITO"
+      },
+      {
+        "codigo": "679",
+        "nombre": "SAN GIL"
+      },
+      {
+        "codigo": "682",
+        "nombre": "SAN JOAQUIN"
+      },
+      {
+        "codigo": "684",
+        "nombre": "SAN JOSE DE MIRANDA"
+      },
+      {
+        "codigo": "686",
+        "nombre": "SAN MIGUEL"
+      },
+      {
+        "codigo": "689",
+        "nombre": "SAN VICENTE DE CHUCURI"
+      },
+      {
+        "codigo": "705",
+        "nombre": "SANTA BARBARA"
+      },
+      {
+        "codigo": "720",
+        "nombre": "SANTA HELENA DEL OPON"
+      },
+      {
+        "codigo": "745",
+        "nombre": "SIMACOTA"
+      },
+      {
+        "codigo": "755",
+        "nombre": "SOCORRO"
+      },
+      {
+        "codigo": "770",
+        "nombre": "SUAITA"
+      },
+      {
+        "codigo": "773",
+        "nombre": "SUCRE"
+      },
+      {
+        "codigo": "780",
+        "nombre": "SURATA"
+      },
+      {
+        "codigo": "820",
+        "nombre": "TONA"
+      },
+      {
+        "codigo": "855",
+        "nombre": "VALLE DE SAN JOSE"
+      },
+      {
+        "codigo": "861",
+        "nombre": "VELEZ"
+      },
+      {
+        "codigo": "867",
+        "nombre": "VETAS"
+      },
+      {
+        "codigo": "872",
+        "nombre": "VILLANUEVA"
+      },
+      {
+        "codigo": "895",
+        "nombre": "ZAPATOCA"
+      }
+    ],
+    "70": [
+      {
+        "codigo": "110",
+        "nombre": "BUENAVISTA"
+      },
+      {
+        "codigo": "124",
+        "nombre": "CAIMITO"
+      },
+      {
+        "codigo": "230",
+        "nombre": "CHALAN"
+      },
+      {
+        "codigo": "204",
+        "nombre": "COLOSO"
+      },
+      {
+        "codigo": "215",
+        "nombre": "COROZAL"
+      },
+      {
+        "codigo": "221",
+        "nombre": "COVEÑAS"
+      },
+      {
+        "codigo": "233",
+        "nombre": "EL ROBLE"
+      },
+      {
+        "codigo": "235",
+        "nombre": "GALERAS"
+      },
+      {
+        "codigo": "265",
+        "nombre": "GUARANDA"
+      },
+      {
+        "codigo": "400",
+        "nombre": "LA UNION"
+      },
+      {
+        "codigo": "418",
+        "nombre": "LOS PALMITOS"
+      },
+      {
+        "codigo": "429",
+        "nombre": "MAJAGUAL"
+      },
+      {
+        "codigo": "473",
+        "nombre": "MORROA"
+      },
+      {
+        "codigo": "508",
+        "nombre": "OVEJAS"
+      },
+      {
+        "codigo": "523",
+        "nombre": "PALMITO"
+      },
+      {
+        "codigo": "670",
+        "nombre": "SAMPUES"
+      },
+      {
+        "codigo": "678",
+        "nombre": "SAN BENITO ABAD"
+      },
+      {
+        "codigo": "702",
+        "nombre": "SAN JUAN DE BETULIA"
+      },
+      {
+        "codigo": "742",
+        "nombre": "SAN LUIS DE SINCE"
+      },
+      {
+        "codigo": "708",
+        "nombre": "SAN MARCOS"
+      },
+      {
+        "codigo": "713",
+        "nombre": "SAN ONOFRE"
+      },
+      {
+        "codigo": "717",
+        "nombre": "SAN PEDRO"
+      },
+      {
+        "codigo": "820",
+        "nombre": "SANTIAGO DE TOLU"
+      },
+      {
+        "codigo": "1",
+        "nombre": "SINCELEJO"
+      },
+      {
+        "codigo": "771",
+        "nombre": "SUCRE"
+      },
+      {
+        "codigo": "823",
+        "nombre": "TOLU VIEJO"
+      }
+    ],
+    "73": [
+      {
+        "codigo": "24",
+        "nombre": "ALPUJARRA"
+      },
+      {
+        "codigo": "26",
+        "nombre": "ALVARADO"
+      },
+      {
+        "codigo": "30",
+        "nombre": "AMBALEMA"
+      },
+      {
+        "codigo": "43",
+        "nombre": "ANZOATEGUI"
+      },
+      {
+        "codigo": "55",
+        "nombre": "ARMERO"
+      },
+      {
+        "codigo": "67",
+        "nombre": "ATACO"
+      },
+      {
+        "codigo": "124",
+        "nombre": "CAJAMARCA"
+      },
+      {
+        "codigo": "148",
+        "nombre": "CARMEN DE APICALA"
+      },
+      {
+        "codigo": "152",
+        "nombre": "CASABIANCA"
+      },
+      {
+        "codigo": "168",
+        "nombre": "CHAPARRAL"
+      },
+      {
+        "codigo": "200",
+        "nombre": "COELLO"
+      },
+      {
+        "codigo": "217",
+        "nombre": "COYAIMA"
+      },
+      {
+        "codigo": "226",
+        "nombre": "CUNDAY"
+      },
+      {
+        "codigo": "236",
+        "nombre": "DOLORES"
+      },
+      {
+        "codigo": "268",
+        "nombre": "ESPINAL"
+      },
+      {
+        "codigo": "270",
+        "nombre": "FALAN"
+      },
+      {
+        "codigo": "275",
+        "nombre": "FLANDES"
+      },
+      {
+        "codigo": "283",
+        "nombre": "FRESNO"
+      },
+      {
+        "codigo": "319",
+        "nombre": "GUAMO"
+      },
+      {
+        "codigo": "347",
+        "nombre": "HERVEO"
+      },
+      {
+        "codigo": "349",
+        "nombre": "HONDA"
+      },
+      {
+        "codigo": "1",
+        "nombre": "IBAGUE"
+      },
+      {
+        "codigo": "352",
+        "nombre": "ICONONZO"
+      },
+      {
+        "codigo": "408",
+        "nombre": "LERIDA"
+      },
+      {
+        "codigo": "411",
+        "nombre": "LIBANO"
+      },
+      {
+        "codigo": "443",
+        "nombre": "MARIQUITA"
+      },
+      {
+        "codigo": "449",
+        "nombre": "MELGAR"
+      },
+      {
+        "codigo": "461",
+        "nombre": "MURILLO"
+      },
+      {
+        "codigo": "483",
+        "nombre": "NATAGAIMA"
+      },
+      {
+        "codigo": "504",
+        "nombre": "ORTEGA"
+      },
+      {
+        "codigo": "520",
+        "nombre": "PALOCABILDO"
+      },
+      {
+        "codigo": "547",
+        "nombre": "PIEDRAS"
+      },
+      {
+        "codigo": "555",
+        "nombre": "PLANADAS"
+      },
+      {
+        "codigo": "563",
+        "nombre": "PRADO"
+      },
+      {
+        "codigo": "585",
+        "nombre": "PURIFICACION"
+      },
+      {
+        "codigo": "616",
+        "nombre": "RIOBLANCO"
+      },
+      {
+        "codigo": "622",
+        "nombre": "RONCESVALLES"
+      },
+      {
+        "codigo": "624",
+        "nombre": "ROVIRA"
+      },
+      {
+        "codigo": "671",
+        "nombre": "SALDAÑA"
+      },
+      {
+        "codigo": "675",
+        "nombre": "SAN ANTONIO"
+      },
+      {
+        "codigo": "678",
+        "nombre": "SAN LUIS"
+      },
+      {
+        "codigo": "686",
+        "nombre": "SANTA ISABEL"
+      },
+      {
+        "codigo": "770",
+        "nombre": "SUAREZ"
+      },
+      {
+        "codigo": "854",
+        "nombre": "VALLE DE SAN JUAN"
+      },
+      {
+        "codigo": "861",
+        "nombre": "VENADILLO"
+      },
+      {
+        "codigo": "870",
+        "nombre": "VILLAHERMOSA"
+      },
+      {
+        "codigo": "873",
+        "nombre": "VILLARRICA"
+      }
+    ],
+    "76": [
+      {
+        "codigo": "20",
+        "nombre": "ALCALA"
+      },
+      {
+        "codigo": "36",
+        "nombre": "ANDALUCIA"
+      },
+      {
+        "codigo": "41",
+        "nombre": "ANSERMANUEVO"
+      },
+      {
+        "codigo": "54",
+        "nombre": "ARGELIA"
+      },
+      {
+        "codigo": "100",
+        "nombre": "BOLIVAR"
+      },
+      {
+        "codigo": "109",
+        "nombre": "BUENAVENTURA"
+      },
+      {
+        "codigo": "113",
+        "nombre": "BUGALAGRANDE"
+      },
+      {
+        "codigo": "122",
+        "nombre": "CAICEDONIA"
+      },
+      {
+        "codigo": "1",
+        "nombre": "CALI"
+      },
+      {
+        "codigo": "126",
+        "nombre": "CALIMA"
+      },
+      {
+        "codigo": "130",
+        "nombre": "CANDELARIA"
+      },
+      {
+        "codigo": "147",
+        "nombre": "CARTAGO"
+      },
+      {
+        "codigo": "233",
+        "nombre": "DAGUA"
+      },
+      {
+        "codigo": "243",
+        "nombre": "EL AGUILA"
+      },
+      {
+        "codigo": "246",
+        "nombre": "EL CAIRO"
+      },
+      {
+        "codigo": "248",
+        "nombre": "EL CERRITO"
+      },
+      {
+        "codigo": "250",
+        "nombre": "EL DOVIO"
+      },
+      {
+        "codigo": "275",
+        "nombre": "FLORIDA"
+      },
+      {
+        "codigo": "306",
+        "nombre": "GINEBRA"
+      },
+      {
+        "codigo": "318",
+        "nombre": "GUACARI"
+      },
+      {
+        "codigo": "111",
+        "nombre": "GUADALAJARA DE BUGA"
+      },
+      {
+        "codigo": "364",
+        "nombre": "JAMUNDI"
+      },
+      {
+        "codigo": "377",
+        "nombre": "LA CUMBRE"
+      },
+      {
+        "codigo": "400",
+        "nombre": "LA UNION"
+      },
+      {
+        "codigo": "403",
+        "nombre": "LA VICTORIA"
+      },
+      {
+        "codigo": "497",
+        "nombre": "OBANDO"
+      },
+      {
+        "codigo": "520",
+        "nombre": "PALMIRA"
+      },
+      {
+        "codigo": "563",
+        "nombre": "PRADERA"
+      },
+      {
+        "codigo": "606",
+        "nombre": "RESTREPO"
+      },
+      {
+        "codigo": "616",
+        "nombre": "RIOFRIO"
+      },
+      {
+        "codigo": "622",
+        "nombre": "ROLDANILLO"
+      },
+      {
+        "codigo": "670",
+        "nombre": "SAN PEDRO"
+      },
+      {
+        "codigo": "736",
+        "nombre": "SEVILLA"
+      },
+      {
+        "codigo": "823",
+        "nombre": "TORO"
+      },
+      {
+        "codigo": "828",
+        "nombre": "TRUJILLO"
+      },
+      {
+        "codigo": "834",
+        "nombre": "TULUA"
+      },
+      {
+        "codigo": "845",
+        "nombre": "ULLOA"
+      },
+      {
+        "codigo": "863",
+        "nombre": "VERSALLES"
+      },
+      {
+        "codigo": "869",
+        "nombre": "VIJES"
+      },
+      {
+        "codigo": "890",
+        "nombre": "YOTOCO"
+      },
+      {
+        "codigo": "892",
+        "nombre": "YUMBO"
+      },
+      {
+        "codigo": "895",
+        "nombre": "ZARZAL"
+      }
+    ],
+    "81": [
+      {
+        "codigo": "1",
+        "nombre": "ARAUCA"
+      },
+      {
+        "codigo": "65",
+        "nombre": "ARAUQUITA"
+      },
+      {
+        "codigo": "220",
+        "nombre": "CRAVO NORTE"
+      },
+      {
+        "codigo": "300",
+        "nombre": "FORTUL"
+      },
+      {
+        "codigo": "591",
+        "nombre": "PUERTO RONDON"
+      },
+      {
+        "codigo": "736",
+        "nombre": "SARAVENA"
+      },
+      {
+        "codigo": "794",
+        "nombre": "TAME"
+      }
+    ],
+    "85": [
+      {
+        "codigo": "10",
+        "nombre": "AGUAZUL"
+      },
+      {
+        "codigo": "15",
+        "nombre": "CHAMEZA"
+      },
+      {
+        "codigo": "125",
+        "nombre": "HATO COROZAL"
+      },
+      {
+        "codigo": "136",
+        "nombre": "LA SALINA"
+      },
+      {
+        "codigo": "139",
+        "nombre": "MANI"
+      },
+      {
+        "codigo": "162",
+        "nombre": "MONTERREY"
+      },
+      {
+        "codigo": "225",
+        "nombre": "NUNCHIA"
+      },
+      {
+        "codigo": "230",
+        "nombre": "OROCUE"
+      },
+      {
+        "codigo": "250",
+        "nombre": "PAZ DE ARIPORO"
+      },
+      {
+        "codigo": "263",
+        "nombre": "PORE"
+      },
+      {
+        "codigo": "279",
+        "nombre": "RECETOR"
+      },
+      {
+        "codigo": "300",
+        "nombre": "SABANALARGA"
+      },
+      {
+        "codigo": "315",
+        "nombre": "SACAMA"
+      },
+      {
+        "codigo": "325",
+        "nombre": "SAN LUIS DE PALENQUE"
+      },
+      {
+        "codigo": "400",
+        "nombre": "TAMARA"
+      },
+      {
+        "codigo": "410",
+        "nombre": "TAURAMENA"
+      },
+      {
+        "codigo": "430",
+        "nombre": "TRINIDAD"
+      },
+      {
+        "codigo": "440",
+        "nombre": "VILLANUEVA"
+      },
+      {
+        "codigo": "1",
+        "nombre": "YOPAL"
+      }
+    ],
+    "86": [
+      {
+        "codigo": "219",
+        "nombre": "COLON"
+      },
+      {
+        "codigo": "573",
+        "nombre": "LEGUIZAMO"
+      },
+      {
+        "codigo": "1",
+        "nombre": "MOCOA"
+      },
+      {
+        "codigo": "320",
+        "nombre": "ORITO"
+      },
+      {
+        "codigo": "568",
+        "nombre": "PUERTO ASIS"
+      },
+      {
+        "codigo": "569",
+        "nombre": "PUERTO CAICEDO"
+      },
+      {
+        "codigo": "571",
+        "nombre": "PUERTO GUZMAN"
+      },
+      {
+        "codigo": "755",
+        "nombre": "SAN FRANCISCO"
+      },
+      {
+        "codigo": "757",
+        "nombre": "SAN MIGUEL"
+      },
+      {
+        "codigo": "760",
+        "nombre": "SANTIAGO"
+      },
+      {
+        "codigo": "749",
+        "nombre": "SIBUNDOY"
+      },
+      {
+        "codigo": "865",
+        "nombre": "VALLE DEL GUAMUEZ"
+      },
+      {
+        "codigo": "885",
+        "nombre": "VILLAGARZON"
+      }
+    ],
+    "88": [
+      {
+        "codigo": "564",
+        "nombre": "PROVIDENCIA"
+      },
+      {
+        "codigo": "1",
+        "nombre": "SAN ANDRES"
+      }
+    ],
+    "91": [
+      {
+        "codigo": "263",
+        "nombre": "EL ENCANTO"
+      },
+      {
+        "codigo": "405",
+        "nombre": "LA CHORRERA"
+      },
+      {
+        "codigo": "407",
+        "nombre": "LA PEDRERA"
+      },
+      {
+        "codigo": "430",
+        "nombre": "LA VICTORIA"
+      },
+      {
+        "codigo": "1",
+        "nombre": "LETICIA"
+      },
+      {
+        "codigo": "460",
+        "nombre": "MIRITI - PARANA"
+      },
+      {
+        "codigo": "530",
+        "nombre": "PUERTO ALEGRIA"
+      },
+      {
+        "codigo": "536",
+        "nombre": "PUERTO ARICA"
+      },
+      {
+        "codigo": "540",
+        "nombre": "PUERTO NARIÑO"
+      },
+      {
+        "codigo": "669",
+        "nombre": "PUERTO SANTANDER"
+      },
+      {
+        "codigo": "798",
+        "nombre": "TARAPACA"
+      }
+    ],
+    "94": [
+      {
+        "codigo": "343",
+        "nombre": "BARRANCO MINAS"
+      },
+      {
+        "codigo": "886",
+        "nombre": "CACAHUAL"
+      },
+      {
+        "codigo": "1",
+        "nombre": "INIRIDA"
+      },
+      {
+        "codigo": "885",
+        "nombre": "LA GUADALUPE"
+      },
+      {
+        "codigo": "663",
+        "nombre": "MAPIRIPANA"
+      },
+      {
+        "codigo": "888",
+        "nombre": "MORICHAL"
+      },
+      {
+        "codigo": "887",
+        "nombre": "PANA PANA"
+      },
+      {
+        "codigo": "884",
+        "nombre": "PUERTO COLOMBIA"
+      },
+      {
+        "codigo": "883",
+        "nombre": "SAN FELIPE"
+      }
+    ],
+    "95": [
+      {
+        "codigo": "15",
+        "nombre": "CALAMAR"
+      },
+      {
+        "codigo": "25",
+        "nombre": "EL RETORNO"
+      },
+      {
+        "codigo": "200",
+        "nombre": "MIRAFLORES"
+      },
+      {
+        "codigo": "1",
+        "nombre": "SAN JOSE DEL GUAVIARE"
+      }
+    ],
+    "97": [
+      {
+        "codigo": "161",
+        "nombre": "CARURU"
+      },
+      {
+        "codigo": "1",
+        "nombre": "MITU"
+      },
+      {
+        "codigo": "511",
+        "nombre": "PACOA"
+      },
+      {
+        "codigo": "777",
+        "nombre": "PAPUNAUA"
+      },
+      {
+        "codigo": "666",
+        "nombre": "TARAIRA"
+      },
+      {
+        "codigo": "889",
+        "nombre": "YAVARATE"
+      }
+    ],
+    "99": [
+      {
+        "codigo": "773",
+        "nombre": "CUMARIBO"
+      },
+      {
+        "codigo": "524",
+        "nombre": "LA PRIMAVERA"
+      },
+      {
+        "codigo": "1",
+        "nombre": "PUERTO CARREÑO"
+      },
+      {
+        "codigo": "624",
+        "nombre": "SANTA ROSALIA"
+      }
+    ]
+  }
+}
