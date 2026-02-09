@@ -561,11 +561,11 @@ function DashboardPage() {
   const exportExcel = async () => {
     setExporting(true)
     try {
-      const response = await api.get('/export/xlsx', { responseType: 'blob' })
+      const response = await api.get('/export/dashboard/xlsx', { responseType: 'blob' })
       const url = window.URL.createObjectURL(new Blob([response.data]))
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', `exportacion_innovabigdata_${new Date().toISOString().split('T')[0]}.xlsx`)
+      link.setAttribute('download', `dashboard_innovabigdata_${new Date().toISOString().split('T')[0]}.xlsx`)
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -1535,6 +1535,9 @@ function LeadersPage() {
 function VotersListPage() {
   const { user } = useAuth()
   const [voters, setVoters] = useState([])
+  const [totalVoters, setTotalVoters] = useState(0)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 20
   const [loading, setLoading] = useState(true)
   const [exportLoading, setExportLoading] = useState(false)
   const [filters, setFilters] = useState({
@@ -1551,16 +1554,20 @@ function VotersListPage() {
 
   useEffect(() => {
     loadVoters()
-  }, [filters])
+  }, [filters, page])
 
   const loadVoters = async () => {
     try {
+      setLoading(true)
       const params = new URLSearchParams()
+      params.append('limit', PAGE_SIZE)
+      params.append('skip', (page - 1) * PAGE_SIZE)
       if (filters.estado) params.append('estado', filters.estado)
       if (filters.municipio) params.append('municipio', filters.municipio)
 
       const response = await api.get(`/voters?${params.toString()}`)
-      setVoters(response.data)
+      setVoters(response.data.items ?? [])
+      setTotalVoters(response.data.total ?? 0)
     } catch (error) {
       console.error('Error loading voters:', error)
     } finally {
@@ -1754,7 +1761,7 @@ function VotersListPage() {
           <div>
             <label className="form-label se-label block mb-1">Estado</label>
             <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-              <select className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={filters.estado} onChange={(e) => setFilters(prev => ({ ...prev, estado: e.target.value }))}>
+              <select className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={filters.estado} onChange={(e) => { setPage(1); setFilters(prev => ({ ...prev, estado: e.target.value })); }}>
                 <option value="">Todos</option>
                 <option value="verificado">Verificado</option>
                 <option value="inconsistente">Inconsistente</option>
@@ -1766,7 +1773,7 @@ function VotersListPage() {
           <div>
             <label className="form-label se-label block mb-1">Municipio</label>
             <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-              <input type="text" className="se-input flex-1 min-w-0 px-3 py-2" placeholder="Filtrar por municipio" value={filters.municipio} onChange={(e) => setFilters(prev => ({ ...prev, municipio: e.target.value }))} />
+              <input type="text" className="se-input flex-1 min-w-0 px-3 py-2" placeholder="Filtrar por municipio" value={filters.municipio} onChange={(e) => { setPage(1); setFilters(prev => ({ ...prev, municipio: e.target.value })); }} />
             </div>
           </div>
           <div className="flex items-end">
@@ -1827,6 +1834,31 @@ function VotersListPage() {
             </tbody>
           </table>
         </div>
+        {totalVoters > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-[rgba(255,255,255,.06)]">
+            <p className="se-foot-muted text-sm">
+              Página {page} de {Math.max(1, Math.ceil(totalVoters / PAGE_SIZE))} · {totalVoters} sufragante{totalVoters !== 1 ? 's' : ''} en total
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="btn se-btn-soft text-sm py-2 px-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={page <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                className="btn se-btn-primary text-sm py-2 px-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={page >= Math.ceil(totalVoters / PAGE_SIZE)}
+                onClick={() => setPage(p => p + 1)}
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {editVoter && (

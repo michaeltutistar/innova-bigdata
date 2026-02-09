@@ -307,6 +307,11 @@ class SufraganteMunicipio(BaseModel):
     municipio: str
     total: int
 
+class VotersListResponse(BaseModel):
+    """Respuesta paginada de lista de sufragantes."""
+    items: List[SufraganteResponse]
+    total: int
+
 class SufragantePorLider(BaseModel):
     lider_id: int
     lider_nombre: str
@@ -1070,10 +1075,10 @@ async def crear_sufragante(
 
     return nuevo_sufragante
 
-@app.get("/voters", response_model=List[SufraganteResponse])
+@app.get("/voters", response_model=VotersListResponse)
 async def listar_sufragantes(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 20,
     lider_id: Optional[int] = None,
     estado: Optional[str] = None,
     municipio: Optional[str] = None,
@@ -1081,7 +1086,7 @@ async def listar_sufragantes(
     current_user: TokenData = Depends(get_current_user)
 ):
     """
-    Listar sufragantes con filtros
+    Listar sufragantes con filtros y paginación (items + total).
     """
     query = db.query(Sufragante)
 
@@ -1096,8 +1101,9 @@ async def listar_sufragantes(
     if current_user.rol == "operador":
         query = query.filter(Sufragante.usuario_registro == current_user.username)
 
+    total = query.count()
     sufragantes = query.order_by(Sufragante.fecha_registro.desc()).offset(skip).limit(limit).all()
-    return sufragantes
+    return VotersListResponse(items=sufragantes, total=total)
 
 @app.get("/voters/{voter_id}", response_model=SufraganteResponse)
 async def obtener_sufragante(
@@ -1495,6 +1501,99 @@ async def get_tendencia_registros(
     ).group_by(func.date(Sufragante.fecha_registro)).order_by("fecha").all()
 
     return [{"fecha": str(row[0]), "total": row[1]} for row in resultados]
+
+@app.get("/export/dashboard/xlsx")
+async def export_dashboard_excel(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Exportar datos del dashboard a Excel: resumen KPIs, sufragantes por municipio,
+    sufragantes por líder. Solo para superadmin (botón Exportar Excel del Dashboard).
+    """
+    # Métricas (misma lógica que get_dashboard)
+    total_lideres = db.query(func.count(Lider.id)).filter(Lider.activo == True).scalar()
+    total_sufragantes = db.query(func.count(Sufragante.id)).scalar()
+    verificados = db.query(func.count(Sufragante.id)).filter(Sufragante.estado_validacion == "verificado").scalar()
+    inconsistentes = db.query(func.count(Sufragante.id)).filter(Sufragante.estado_validacion == "inconsistente").scalar()
+    en_revision = db.query(func.count(Sufragante.id)).filter(Sufragante.estado_validacion == "revision").scalar()
+    sin_verificar = db.query(func.count(Sufragante.id)).filter(Sufragante.estado_validacion == "sin_verificar").scalar()
+    hoy = datetime.utcnow().date()
+    semana_inicio = hoy - timedelta(days=hoy.weekday())
+    mes_inicio = hoy.replace(day=1)
+    registros_hoy = db.query(func.count(Sufragante.id)).filter(func.date(Sufragante.fecha_registro) == hoy).scalar()
+    registros_semana = db.query(func.count(Sufragante.id)).filter(Sufragante.fecha_registro >= semana_inicio).scalar()
+    registros_mes = db.query(func.count(Sufragante.id)).filter(Sufragante.fecha_registro >= mes_inicio).scalar()
+
+    # Sufragantes por municipio
+    rows_mun = db.query(
+        Sufragante.municipio,
+        func.count(Sufragante.id).label("total")
+    ).group_by(Sufragante.municipio).having(Sufragante.municipio != None).all()
+
+    # Sufragantes por líder (tabla completa)
+    rows_lider = db.query(
+        Lider.id,
+        Lider.nombre,
+        Lider.cedula,
+        func.count(Sufragante.id).label("total"),
+        func.count(case((Sufragante.estado_validacion == "verificado", 1), else_=None)).label("verificados"),
+        func.count(case((Sufragante.estado_validacion == "sin_verificar", 1), else_=None)).label("sin_verificar"),
+        func.count(case((Sufragante.estado_validacion == "revision", 1), else_=None)).label("en_revision"),
+        func.count(case((Sufragante.estado_validacion == "inconsistente", 1), else_=None)).label("inconsistentes"),
+    ).outerjoin(Sufragante, Lider.id == Sufragante.lider_id).group_by(Lider.id).all()
+
+    wb = openpyxl.Workbook()
+
+    # Hoja Resumen (KPIs del dashboard)
+    ws_resumen = wb.active
+    ws_resumen.title = "Resumen"
+    ws_resumen.append(["Indicador", "Valor"])
+    ws_resumen.append(["Total Líderes", total_lideres or 0])
+    ws_resumen.append(["Total Sufragantes", total_sufragantes or 0])
+    ws_resumen.append(["Verificados", verificados or 0])
+    ws_resumen.append(["Inconsistentes", inconsistentes or 0])
+    ws_resumen.append(["En revisión", en_revision or 0])
+    ws_resumen.append(["Sin verificar", sin_verificar or 0])
+    ws_resumen.append([])
+    ws_resumen.append(["Registros Hoy", registros_hoy or 0])
+    ws_resumen.append(["Registros Esta Semana", registros_semana or 0])
+    ws_resumen.append(["Registros Este Mes", registros_mes or 0])
+
+    # Hoja Sufragantes por Municipio
+    ws_mun = wb.create_sheet("Sufragantes por Municipio")
+    ws_mun.append(["MUNICIPIO", "TOTAL"])
+    for row in rows_mun:
+        ws_mun.append([row[0] or "Sin especificar", row[1]])
+
+    # Hoja Sufragantes por Líder (tabla completa)
+    ws_lider = wb.create_sheet("Sufragantes por Líder")
+    ws_lider.append(["LÍDER", "CÉDULA", "TOTAL", "VERIF.", "SIN VERIF.", "REVISIÓN", "INCONS."])
+    for row in rows_lider:
+        ws_lider.append([
+            row[1] or "",
+            row[2] or "",
+            row[3] or 0,
+            row[4] or 0,
+            row[5] or 0,
+            row[6] or 0,
+            row[7] or 0
+        ])
+
+    buffer = BytesIO()
+    wb.save(buffer)
+    content = buffer.getvalue()
+    buffer.close()
+
+    filename = f"dashboard_innovabigdata_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    logger.info(f"Usuario {current_user.username} exportó dashboard a Excel")
+
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
 
 @app.get("/export/xlsx")
 async def export_excel(

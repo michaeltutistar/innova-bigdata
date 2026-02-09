@@ -270,7 +270,7 @@
 .se-modal{
   border-radius: 18px;
   border: 1px solid rgba(255,255,255,.12);
-  background: linear-gradient(180deg, rgba(10,14,26,.92), rgba(14,20,36,.85));
+  background: linear-gradient(180deg, rgba(38, 53, 97, 0.92), rgba(32, 45, 80, 0.85));
   color: rgba(234,240,255,.92);
 }
 

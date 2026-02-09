@@ -60,6 +60,7 @@ show_help() {
     echo "Opciones:"
     echo "  install     Instalar Docker y dependencias"
     echo "  deploy      Desplegar la aplicación (usa RDS si .env tiene RDS_HOST)"
+    echo "  quick       Despliegue rápido: git pull + build con caché + up (para probar cambios en la URL)"
     echo "  update      Actualizar la aplicación"
     echo "  backup      Crear respaldo de la base de datos"
     echo "  restore     Restaurar respaldo de la base de datos"
@@ -117,40 +118,33 @@ check_env() {
 install_docker() {
     print_step "Instalando Docker y Docker Compose..."
 
-    # Actualizar sistema
-    apt-get update -qq
-    apt-get upgrade -y -qq
-
-    # Instalar dependencias
-    apt-get install -y -qq \
-        apt-transport-https \
-        ca-certificates \
-        curl \
-        gnupg \
-        lsb-release \
-        git \
-        vim \
-        htop
-
-    # Agregar clave GPG de Docker
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-
-    # Agregar repositorio Docker
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-    # Instalar Docker
-    apt-get update -qq
-    apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin
-
-    # Habilitar Docker
-    systemctl start docker
-    systemctl enable docker
-
-    # Agregar usuario al grupo docker
-    if [ -n "$SUDO_USER" ]; then
-        usermod -aG docker $SUDO_USER
+    if command -v dnf &>/dev/null; then
+        # Amazon Linux 2023 / RHEL / Fedora (curl-minimal ya viene instalado, no instalar curl)
+        dnf update -y -q
+        dnf install -y docker
+        systemctl start docker
+        systemctl enable docker
+        # Docker Compose plugin (v2)
+        mkdir -p /usr/local/lib/docker/cli-plugins
+        curl -sSL "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)" -o /usr/local/lib/docker/cli-plugins/docker-compose
+        chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+        ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose 2>/dev/null || true
+    else
+        # Debian / Ubuntu
+        apt-get update -qq
+        apt-get upgrade -y -qq
+        apt-get install -y -qq apt-transport-https ca-certificates curl gnupg lsb-release git vim htop
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+        apt-get update -qq
+        apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin
+        systemctl start docker
+        systemctl enable docker
     fi
 
+    if [ -n "$SUDO_USER" ]; then
+        usermod -aG docker $SUDO_USER 2>/dev/null || true
+    fi
     print_success "Docker instalado correctamente"
 }
 
@@ -192,8 +186,9 @@ deploy() {
     print_step "Deteniendo servicios anteriores..."
     $COMPOSE_CMD down --remove-orphans 2>/dev/null || true
 
-    # Construir e iniciar servicios
+    # Construir e iniciar servicios (builder clásico si buildx no está disponible)
     print_step "Construyendo contenedores..."
+    export DOCKER_BUILDKIT=0
     $COMPOSE_CMD build --no-cache
 
     print_step "Iniciando servicios..."
@@ -248,8 +243,9 @@ update() {
         git pull origin main
     fi
 
-    # Reconstruir y reiniciar
+    # Reconstruir y reiniciar (builder clásico)
     print_step "Reconstruyendo contenedores..."
+    export DOCKER_BUILDKIT=0
     $COMPOSE_CMD build --no-cache
 
     print_step "Iniciando servicios..."
@@ -259,6 +255,54 @@ update() {
     sleep 10
 
     print_success "Aplicación actualizada"
+}
+
+# Despliegue rápido: git pull + build (con caché) + up. Para probar cambios en la URL.
+quick_deploy() {
+    print_step "Despliegue rápido (git pull + build + up)..."
+
+    check_docker
+    cd /opt/${PROJECT_NAME}
+    set_compose_cmd
+
+    # Usar SSL si existe docker-compose.rds.ssl.yml y certificados
+    if [ -f "docker-compose.rds.ssl.yml" ] && [ -f "ssl/fullchain.pem" ]; then
+        export COMPOSE_FILE=docker-compose.rds.ssl.yml
+        print_step "Usando SSL (www.innovabigdata.com)"
+    else
+        set_compose_file
+    fi
+
+    if [ ! -f "docker-compose.yml" ] && [ ! -f "docker-compose.rds.yml" ] && [ -z "$COMPOSE_FILE" ]; then
+        print_error "No se encontró archivo docker-compose"
+        exit 1
+    fi
+
+    # Actualizar código desde Git
+    if [ -d ".git" ]; then
+        print_step "Actualizando código (git pull)..."
+        BRANCH=$(git branch --show-current 2>/dev/null || echo "master")
+        if ! git pull origin "$BRANCH"; then
+            print_warning "git pull falló. El código en la EC2 puede estar desactualizado. Compruebe con: git pull origin $BRANCH"
+        fi
+    fi
+
+    # Build con caché (más rápido; usar 'deploy' o 'update' para --no-cache si hace falta)
+    print_step "Construyendo contenedores (con caché)..."
+    export DOCKER_BUILDKIT=0
+    $COMPOSE_CMD build
+
+    print_step "Iniciando servicios..."
+    $COMPOSE_CMD up -d
+
+    sleep 5
+    if $COMPOSE_CMD ps | grep -q "Up"; then
+        print_success "Despliegue rápido listo. Prueba en la URL."
+        $COMPOSE_CMD ps
+    else
+        print_error "Algo falló. Revisa: $COMPOSE_CMD logs"
+        exit 1
+    fi
 }
 
 # Crear respaldo de la base de datos
@@ -415,6 +459,10 @@ main() {
         deploy)
             check_root
             deploy
+            ;;
+        quick)
+            check_root
+            quick_deploy
             ;;
         update)
             check_root
