@@ -827,6 +827,7 @@ function VoterRegistrationPage() {
   const [massFile, setMassFile] = useState(null)
   const [massLoading, setMassLoading] = useState(false)
   const [massResult, setMassResult] = useState(null)
+  const [showMassConfirm, setShowMassConfirm] = useState(false)
 
   useEffect(() => {
     loadLeaders()
@@ -954,13 +955,19 @@ function VoterRegistrationPage() {
     }
   }
 
-  const handleMassUpload = async (e) => {
+  const handleMassUploadSubmit = (e) => {
     e.preventDefault()
     if (!massLeader || !massFile) {
       setError('Seleccione el líder y adjunte el archivo Excel')
       return
     }
     setError('')
+    setShowMassConfirm(true)
+  }
+
+  const doMassUpload = async () => {
+    if (!massLeader || !massFile) return
+    setShowMassConfirm(false)
     setMassResult(null)
     setMassLoading(true)
     try {
@@ -992,7 +999,7 @@ function VoterRegistrationPage() {
         <p className="se-foot-muted mb-4">
           Seleccione el líder y adjunte un archivo Excel (.xlsx) con las columnas: NOMBRES Y APELLIDOS, CÉDULA, EDAD, CELULAR, DIRECCION (residencia), DEPARTAMENTO, MUNICIPIO, LUGAR DE VOTACION, MESA DE VOTACION. La columna QUIEN REFIERE no se usa.
         </p>
-        <form onSubmit={handleMassUpload} className="space-y-4">
+        <form onSubmit={handleMassUploadSubmit} className="space-y-4">
           <div>
             <label className="form-label se-label block mb-1">Líder</label>
             <div className="se-inputgroup flex rounded-2xl overflow-hidden">
@@ -1015,6 +1022,20 @@ function VoterRegistrationPage() {
             {massLoading ? 'Subiendo...' : 'Subir y registrar'}
           </button>
         </form>
+        {showMassConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowMassConfirm(false)}>
+            <div className="se-modal max-w-md w-full rounded-2xl p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <h3 className="se-title mb-3">Confirmar carga masiva</h3>
+              <p className="se-foot-muted mb-4">
+                Va a subir el archivo Excel asociado al líder <strong className="text-[rgba(234,240,255,.95)]">{leaders.find(l => l.id === parseInt(massLeader))?.nombre ?? 'Seleccionado'}</strong>. ¿Desea continuar?
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button type="button" className="btn se-btn-soft" onClick={() => setShowMassConfirm(false)}>Cancelar</button>
+                <button type="button" className="btn se-btn-primary" onClick={doMassUpload}>Aceptar</button>
+              </div>
+            </div>
+          </div>
+        )}
         {massResult && (
           <div className="mt-4 p-4 rounded-2xl border border-[rgba(34,197,94,.35)] bg-[rgba(34,197,94,.12)]">
             <p className="font-medium text-[rgba(234,240,255,.95)]">{massResult.created} registrado(s)</p>
