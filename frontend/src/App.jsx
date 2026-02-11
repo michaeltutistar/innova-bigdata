@@ -16,6 +16,9 @@ const api = axios.create({
   }
 })
 
+// Mostrar botones "Verificar con Verifik" (formulario registro, lista sufragantes, modal editar). Cambiar a true para reactivar.
+const SHOW_VERIFIK_BUTTON = false
+
 // Add auth token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
@@ -828,10 +831,23 @@ function VoterRegistrationPage() {
   const [massLoading, setMassLoading] = useState(false)
   const [massResult, setMassResult] = useState(null)
   const [showMassConfirm, setShowMassConfirm] = useState(false)
+  const [departamentosData, setDepartamentosData] = useState({ departamentos: [], municipios: {} })
+  const [municipiosFiltrados, setMunicipiosFiltrados] = useState([])
 
   useEffect(() => {
     loadLeaders()
+    loadDepartamentos()
   }, [])
+
+  const loadDepartamentos = async () => {
+    try {
+      const response = await fetch('/departamentos.json')
+      const data = await response.json()
+      setDepartamentosData(data)
+    } catch (err) {
+      console.error('Error cargando departamentos:', err)
+    }
+  }
 
   const loadLeaders = async () => {
     try {
@@ -844,10 +860,22 @@ function VoterRegistrationPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'nombre' ? value.toUpperCase() : value
-    }))
+    if (name === 'departamento') {
+      const depto = departamentosData.departamentos.find(d => d.nombre === value)
+      const codigoDepto = depto?.codigo
+      const municipios = codigoDepto ? (departamentosData.municipios[codigoDepto] || []) : []
+      setMunicipiosFiltrados(municipios)
+      setFormData(prev => ({
+        ...prev,
+        departamento: value,
+        municipio: ''
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: name === 'nombre' ? value.toUpperCase() : value
+      }))
+    }
   }
 
   const verifyCedula = async () => {
@@ -948,6 +976,7 @@ function VoterRegistrationPage() {
       setEstadoValidacion(null)
       setDiscrepancias([])
       setSelectedLeader(null)
+      setMunicipiosFiltrados([])
     } catch (err) {
       setError(err.response?.data?.detail || 'Error al registrar sufragante')
     } finally {
@@ -1096,13 +1125,23 @@ function VoterRegistrationPage() {
             <div>
               <label className="form-label se-label block mb-1">Departamento</label>
               <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-                <input type="text" name="departamento" className="se-input flex-1 min-w-0 px-3 py-2" value={formData.departamento} onChange={handleChange} placeholder="Ej. BOGOTA D.C." />
+                <select name="departamento" className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={formData.departamento} onChange={handleChange}>
+                  <option value="">Seleccionar...</option>
+                  {departamentosData.departamentos.map(depto => (
+                    <option key={depto.codigo} value={depto.nombre}>{depto.nombre}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div>
               <label className="form-label se-label block mb-1">Municipio</label>
               <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-                <input type="text" name="municipio" className="se-input flex-1 min-w-0 px-3 py-2" value={formData.municipio} onChange={handleChange} placeholder="Ej. BOGOTA D.C." />
+                <select name="municipio" className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={formData.municipio} onChange={handleChange} disabled={!formData.departamento}>
+                  <option value="">{formData.departamento ? 'Seleccionar...' : 'Seleccione primero un departamento'}</option>
+                  {municipiosFiltrados.map(muni => (
+                    <option key={muni.codigo} value={muni.nombre}>{muni.nombre}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div>
@@ -1199,10 +1238,12 @@ function VoterRegistrationPage() {
 
         <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-[rgba(255,255,255,.1)]">
           <p className="se-foot-muted text-sm w-full">Puede registrar sin verificar; quedará «Sin verificar».</p>
-          <button type="button" onClick={verifyCedula} className="btn se-btn-soft" disabled={verifikLoading || !formData.cedula || formData.cedula.length < 6}>
-            {verifikLoading ? 'Verificando...' : 'Verificar con Verifik'}
-          </button>
-          <button type="button" onClick={() => { setFormData({ nombre: '', cedula: '', edad: '', celular: '', direccion_residencia: '', genero: '', departamento: '', municipio: '', lugar_votacion: '', mesa_votacion: '', direccion_puesto: '' }); setNoTieneCelular(false); setVerifikData(null); setEstadoValidacion(null); setDiscrepancias([]); setSelectedLeader(null) }} className="btn se-btn-soft">
+          {SHOW_VERIFIK_BUTTON && (
+            <button type="button" onClick={verifyCedula} className="btn se-btn-soft" disabled={verifikLoading || !formData.cedula || formData.cedula.length < 6}>
+              {verifikLoading ? 'Verificando...' : 'Verificar con Verifik'}
+            </button>
+          )}
+          <button type="button" onClick={() => { setFormData({ nombre: '', cedula: '', edad: '', celular: '', direccion_residencia: '', genero: '', departamento: '', municipio: '', lugar_votacion: '', mesa_votacion: '', direccion_puesto: '' }); setMunicipiosFiltrados([]); setNoTieneCelular(false); setVerifikData(null); setEstadoValidacion(null); setDiscrepancias([]); setSelectedLeader(null) }} className="btn se-btn-soft">
             Limpiar
           </button>
           <button type="submit" className="btn se-btn-primary" disabled={loading}>
@@ -1768,7 +1809,7 @@ function VotersListPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="se-title mb-0">Lista de Sufragantes</h1>
-        {(user?.rol === 'superadmin' || user?.rol === 'operador') && (
+        {user?.rol === 'superadmin' && (
           <button type="button" onClick={handleExportExcel} disabled={exportLoading} className="btn se-btn-primary">
             <i className="bi bi-file-earmark-excel me-2"></i>
             {exportLoading ? 'Exportando...' : 'Exportar a Excel'}
@@ -1844,9 +1885,11 @@ function VotersListPage() {
                     {(voter.estado_validacion === 'revision' || voter.estado_validacion === 'sin_verificar' || voter.estado_validacion === 'inconsistente') && (
                       <span className="inline-flex gap-2">
                         <button type="button" onClick={() => openEditModal(voter)} className="btn se-btn-soft text-sm py-1 px-2">Editar</button>
-                        <button type="button" onClick={() => handleVerifyRow(voter)} disabled={verifyLoadingId === voter.id} className="btn se-btn-primary text-sm py-1 px-2">
-                          {verifyLoadingId === voter.id ? 'Verificando...' : 'Verificar'}
-                        </button>
+                        {SHOW_VERIFIK_BUTTON && (
+                          <button type="button" onClick={() => handleVerifyRow(voter)} disabled={verifyLoadingId === voter.id} className="btn se-btn-primary text-sm py-1 px-2">
+                            {verifyLoadingId === voter.id ? 'Verificando...' : 'Verificar'}
+                          </button>
+                        )}
                       </span>
                     )}
                   </td>
@@ -1969,7 +2012,9 @@ function VotersListPage() {
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap">
-                <button type="button" onClick={handleEditVerify} disabled={editVerifyLoading} className="btn se-btn-soft">{editVerifyLoading ? 'Verificando...' : 'Verificar con Verifik'}</button>
+                {SHOW_VERIFIK_BUTTON && (
+                  <button type="button" onClick={handleEditVerify} disabled={editVerifyLoading} className="btn se-btn-soft">{editVerifyLoading ? 'Verificando...' : 'Verificar con Verifik'}</button>
+                )}
                 {editEstado && (
                   <span className={`badge ${editEstado === 'verificado' ? 'badge-success' : editEstado === 'revision' ? 'badge-warning' : 'badge-danger'}`}>
                     {editEstado === 'verificado' ? 'Verificado' : editEstado === 'revision' ? 'En Revisión' : editEstado === 'sin_verificar' ? 'Sin verificar' : 'Inconsistente'}
