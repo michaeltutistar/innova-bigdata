@@ -41,6 +41,76 @@ api.interceptors.response.use(
   }
 )
 
+// Normalizar texto con caracteres corruptos (UTF-8 leído como Latin-1): Ã± -> ñ, Ã' -> Ñ, vocales con tilde
+function normalizeTerritoriosText(str) {
+  if (typeof str !== 'string') return str
+  return str
+    .replace(/\u00C3\u00B1/g, 'ñ').replace(/\u00C3\u0091/g, 'Ñ')
+    .replace(/\u00C3\u00A1/g, 'á').replace(/\u00C3\u0081/g, 'Á')
+    .replace(/\u00C3\u00A9/g, 'é').replace(/\u00C3\u0089/g, 'É')
+    .replace(/\u00C3\u00AD/g, 'í').replace(/\u00C3\u008D/g, 'Í')
+    .replace(/\u00C3\u00B3/g, 'ó').replace(/\u00C3\u0093/g, 'Ó')
+    .replace(/\u00C3\u00BA/g, 'ú').replace(/\u00C3\u009A/g, 'Ú')
+}
+
+function parseCSVLine(line) {
+  const arr = []
+  let cur = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i]
+    if (c === '"') {
+      if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+      else inQuotes = !inQuotes
+    } else if ((c === ',' || c === '\r') && !inQuotes) {
+      arr.push(cur.trim())
+      cur = ''
+    } else if (c !== '\r') cur += c
+  }
+  arr.push(cur.trim())
+  return arr
+}
+
+function parseTerritoriosCSV(csvText) {
+  const lines = csvText.split(/\n/).filter(l => l.trim())
+  const rows = []
+  for (let i = 0; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i])
+    if (cols.length < 5) continue
+    const dep = normalizeTerritoriosText((cols[0] || '').replace(/^"|"$/g, '').trim())
+    const mun = normalizeTerritoriosText((cols[1] || '').replace(/^"|"$/g, '').trim())
+    const puesto = normalizeTerritoriosText((cols[2] || '').replace(/^"|"$/g, '').trim())
+    const direccion = normalizeTerritoriosText((cols[4] || '').replace(/^"|"$/g, '').trim())
+    if (!dep || dep === 'DEPARTAMENTO') continue
+    rows.push({ departamento: dep, municipio: mun, puesto, direccion })
+  }
+  return rows
+}
+
+function buildTerritoriosLookup(rows) {
+  const departamentos = [...new Set(rows.map(r => r.departamento))].sort((a, b) => a.localeCompare(b))
+  const municipiosByDepto = {}
+  const puestosByDeptoMun = {}
+  const direccionesByDeptoMunPuesto = {}
+  rows.forEach(r => {
+    const d = r.departamento
+    const m = r.municipio
+    const p = r.puesto
+    if (!municipiosByDepto[d]) municipiosByDepto[d] = []
+    if (!municipiosByDepto[d].includes(m)) municipiosByDepto[d].push(m)
+    const keyMun = d + '|' + m
+    if (!puestosByDeptoMun[keyMun]) puestosByDeptoMun[keyMun] = []
+    if (!puestosByDeptoMun[keyMun].includes(p)) puestosByDeptoMun[keyMun].push(p)
+    const keyPuesto = keyMun + '|' + p
+    if (!direccionesByDeptoMunPuesto[keyPuesto]) direccionesByDeptoMunPuesto[keyPuesto] = []
+    if (p && r.direccion && !direccionesByDeptoMunPuesto[keyPuesto].includes(r.direccion))
+      direccionesByDeptoMunPuesto[keyPuesto].push(r.direccion)
+  })
+  Object.keys(municipiosByDepto).forEach(d => municipiosByDepto[d].sort((a, b) => a.localeCompare(b)))
+  Object.keys(puestosByDeptoMun).forEach(k => puestosByDeptoMun[k].sort((a, b) => a.localeCompare(b)))
+  return { departamentos, municipiosByDepto, puestosByDeptoMun, direccionesByDeptoMunPuesto }
+}
+
 // Auth Provider Component
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -831,21 +901,24 @@ function VoterRegistrationPage() {
   const [massLoading, setMassLoading] = useState(false)
   const [massResult, setMassResult] = useState(null)
   const [showMassConfirm, setShowMassConfirm] = useState(false)
-  const [departamentosData, setDepartamentosData] = useState({ departamentos: [], municipios: {} })
+  const [territoriosData, setTerritoriosData] = useState(null)
   const [municipiosFiltrados, setMunicipiosFiltrados] = useState([])
+  const [puestosFiltrados, setPuestosFiltrados] = useState([])
+  const [direccionesFiltradas, setDireccionesFiltradas] = useState([])
 
   useEffect(() => {
     loadLeaders()
-    loadDepartamentos()
+    loadTerritorios()
   }, [])
 
-  const loadDepartamentos = async () => {
+  const loadTerritorios = async () => {
     try {
-      const response = await fetch('/departamentos.json')
-      const data = await response.json()
-      setDepartamentosData(data)
+      const response = await fetch('/Elecciones_Territoritoriales.csv')
+      const text = await response.text()
+      const rows = parseTerritoriosCSV(text)
+      setTerritoriosData(buildTerritoriosLookup(rows))
     } catch (err) {
-      console.error('Error cargando departamentos:', err)
+      console.error('Error cargando territorios (CSV):', err)
     }
   }
 
@@ -861,15 +934,23 @@ function VoterRegistrationPage() {
   const handleChange = (e) => {
     const { name, value } = e.target
     if (name === 'departamento') {
-      const depto = departamentosData.departamentos.find(d => d.nombre === value)
-      const codigoDepto = depto?.codigo
-      const municipios = codigoDepto ? (departamentosData.municipios[codigoDepto] || []) : []
+      const municipios = territoriosData?.municipiosByDepto[value] || []
       setMunicipiosFiltrados(municipios)
-      setFormData(prev => ({
-        ...prev,
-        departamento: value,
-        municipio: ''
-      }))
+      setPuestosFiltrados([])
+      setDireccionesFiltradas([])
+      setFormData(prev => ({ ...prev, departamento: value, municipio: '', lugar_votacion: '', direccion_puesto: '' }))
+    } else if (name === 'municipio') {
+      const key = formData.departamento + '|' + value
+      const puestos = territoriosData?.puestosByDeptoMun[key] || []
+      setPuestosFiltrados(puestos)
+      setDireccionesFiltradas([])
+      setFormData(prev => ({ ...prev, municipio: value, lugar_votacion: '', direccion_puesto: '' }))
+    } else if (name === 'lugar_votacion') {
+      const key = formData.departamento + '|' + formData.municipio + '|' + value
+      const direcciones = territoriosData?.direccionesByDeptoMunPuesto[key] || []
+      setDireccionesFiltradas(direcciones)
+      const unaSola = direcciones.length === 1 ? direcciones[0] : ''
+      setFormData(prev => ({ ...prev, lugar_votacion: value, direccion_puesto: unaSola }))
     } else {
       setFormData(prev => ({
         ...prev,
@@ -977,6 +1058,8 @@ function VoterRegistrationPage() {
       setDiscrepancias([])
       setSelectedLeader(null)
       setMunicipiosFiltrados([])
+      setPuestosFiltrados([])
+      setDireccionesFiltradas([])
     } catch (err) {
       setError(err.response?.data?.detail || 'Error al registrar sufragante')
     } finally {
@@ -1125,10 +1208,10 @@ function VoterRegistrationPage() {
             <div>
               <label className="form-label se-label block mb-1">Departamento</label>
               <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-                <select name="departamento" className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={formData.departamento} onChange={handleChange}>
-                  <option value="">Seleccionar...</option>
-                  {departamentosData.departamentos.map(depto => (
-                    <option key={depto.codigo} value={depto.nombre}>{depto.nombre}</option>
+                <select name="departamento" className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={formData.departamento} onChange={handleChange} disabled={!territoriosData}>
+                  <option value="">{territoriosData ? 'Seleccionar...' : 'Cargando...'}</option>
+                  {(territoriosData?.departamentos || []).map(depto => (
+                    <option key={depto} value={depto}>{depto}</option>
                   ))}
                 </select>
               </div>
@@ -1139,7 +1222,7 @@ function VoterRegistrationPage() {
                 <select name="municipio" className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={formData.municipio} onChange={handleChange} disabled={!formData.departamento}>
                   <option value="">{formData.departamento ? 'Seleccionar...' : 'Seleccione primero un departamento'}</option>
                   {municipiosFiltrados.map(muni => (
-                    <option key={muni.codigo} value={muni.nombre}>{muni.nombre}</option>
+                    <option key={muni} value={muni}>{muni}</option>
                   ))}
                 </select>
               </div>
@@ -1147,7 +1230,12 @@ function VoterRegistrationPage() {
             <div>
               <label className="form-label se-label block mb-1">Lugar de Votación</label>
               <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-                <input type="text" name="lugar_votacion" className="se-input flex-1 min-w-0 px-3 py-2" value={formData.lugar_votacion} onChange={handleChange} placeholder="Nombre del puesto" />
+                <select name="lugar_votacion" className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={formData.lugar_votacion} onChange={handleChange} disabled={!formData.municipio}>
+                  <option value="">{formData.municipio ? 'Seleccionar...' : 'Seleccione primero departamento y municipio'}</option>
+                  {puestosFiltrados.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div>
@@ -1156,10 +1244,15 @@ function VoterRegistrationPage() {
                 <input type="text" name="mesa_votacion" className="se-input flex-1 min-w-0 px-3 py-2" value={formData.mesa_votacion} onChange={handleChange} placeholder="Número de mesa" />
               </div>
             </div>
-            <div className="md:col-span-2">
+            <div>
               <label className="form-label se-label block mb-1">Dirección del Puesto</label>
               <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-                <input type="text" name="direccion_puesto" className="se-input flex-1 min-w-0 px-3 py-2" value={formData.direccion_puesto} onChange={handleChange} placeholder="Dirección del puesto" />
+                <select name="direccion_puesto" className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={formData.direccion_puesto} onChange={handleChange} disabled={!formData.lugar_votacion}>
+                  <option value="">{formData.lugar_votacion ? 'Seleccionar...' : 'Seleccione primero el lugar de votación'}</option>
+                  {direccionesFiltradas.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -1243,7 +1336,7 @@ function VoterRegistrationPage() {
               {verifikLoading ? 'Verificando...' : 'Verificar con Verifik'}
             </button>
           )}
-          <button type="button" onClick={() => { setFormData({ nombre: '', cedula: '', edad: '', celular: '', direccion_residencia: '', genero: '', departamento: '', municipio: '', lugar_votacion: '', mesa_votacion: '', direccion_puesto: '' }); setMunicipiosFiltrados([]); setNoTieneCelular(false); setVerifikData(null); setEstadoValidacion(null); setDiscrepancias([]); setSelectedLeader(null) }} className="btn se-btn-soft">
+          <button type="button" onClick={() => { setFormData({ nombre: '', cedula: '', edad: '', celular: '', direccion_residencia: '', genero: '', departamento: '', municipio: '', lugar_votacion: '', mesa_votacion: '', direccion_puesto: '' }); setMunicipiosFiltrados([]); setPuestosFiltrados([]); setDireccionesFiltradas([]); setNoTieneCelular(false); setVerifikData(null); setEstadoValidacion(null); setDiscrepancias([]); setSelectedLeader(null) }} className="btn se-btn-soft">
             Limpiar
           </button>
           <button type="submit" className="btn se-btn-primary" disabled={loading}>
@@ -1613,10 +1706,29 @@ function VotersListPage() {
   const [verifyLoadingId, setVerifyLoadingId] = useState(null)
   const [editSaving, setEditSaving] = useState(false)
   const [editVerifyLoading, setEditVerifyLoading] = useState(false)
+  const [observacionesModalVoter, setObservacionesModalVoter] = useState(null)
+  const [observacionesEdit, setObservacionesEdit] = useState('')
+  const [observacionesSaving, setObservacionesSaving] = useState(false)
+  const [territoriosData, setTerritoriosData] = useState(null)
+  const [editMunicipiosFiltrados, setEditMunicipiosFiltrados] = useState([])
+  const [editPuestosFiltrados, setEditPuestosFiltrados] = useState([])
+  const [editDireccionesFiltradas, setEditDireccionesFiltradas] = useState([])
 
   useEffect(() => {
     loadVoters()
+    loadTerritorios()
   }, [filters, page])
+
+  const loadTerritorios = async () => {
+    try {
+      const response = await fetch('/Elecciones_Territoritoriales.csv')
+      const text = await response.text()
+      const rows = parseTerritoriosCSV(text)
+      setTerritoriosData(buildTerritoriosLookup(rows))
+    } catch (err) {
+      console.error('Error cargando territorios (CSV):', err)
+    }
+  }
 
   const loadVoters = async () => {
     try {
@@ -1685,17 +1797,36 @@ function VotersListPage() {
 
   const openEditModal = (voter) => {
     setEditVoter(voter)
+    const deptoNombre = (voter.departamento || '').trim()
+    const munNombre = (voter.municipio || '').trim()
+    const puestoNombre = (voter.lugar_votacion || '').trim()
+    const dirNombre = (voter.direccion_puesto || '').trim()
+    const deptoKey = territoriosData?.departamentos?.find(d => (d || '').toUpperCase() === deptoNombre.toUpperCase()) || deptoNombre
+    const municipios = territoriosData?.municipiosByDepto[deptoKey] || []
+    const munKey = municipios.find(m => (m || '').toUpperCase() === munNombre.toUpperCase()) || munNombre
+    const keyMun = deptoKey + '|' + munKey
+    const puestos = territoriosData?.puestosByDeptoMun[keyMun] || []
+    const puestoKey = puestos.find(p => (p || '').toUpperCase() === puestoNombre.toUpperCase()) || puestoNombre
+    const keyPuesto = keyMun + '|' + puestoKey
+    const direcciones = territoriosData?.direccionesByDeptoMunPuesto[keyPuesto] || []
+    setEditMunicipiosFiltrados(municipios)
+    setEditPuestosFiltrados(puestos)
+    setEditDireccionesFiltradas(direcciones)
+    const departamentoVal = deptoKey
+    const municipioVal = munKey || ''
+    const puestoVal = puestoKey || ''
+    const direccionVal = direcciones.find(d => (d || '').toUpperCase() === dirNombre.toUpperCase()) || dirNombre || ''
     setEditFormData({
       nombre: voter.nombre || '',
       cedula: voter.cedula || '',
       genero: voter.genero || '',
       celular: voter.celular || '',
       direccion_residencia: voter.direccion_residencia || '',
-      departamento: voter.departamento || '',
-      municipio: voter.municipio || '',
-      lugar_votacion: voter.lugar_votacion || '',
+      departamento: departamentoVal,
+      municipio: municipioVal || '',
+      lugar_votacion: puestoVal || '',
       mesa_votacion: voter.mesa_votacion || '',
-      direccion_puesto: voter.direccion_puesto || ''
+      direccion_puesto: direccionVal || ''
     })
     let list = []
     try {
@@ -1754,6 +1885,20 @@ function VotersListPage() {
       console.error('Error saving:', err)
     } finally {
       setEditSaving(false)
+    }
+  }
+
+  const handleObservacionesSave = async () => {
+    if (!observacionesModalVoter) return
+    setObservacionesSaving(true)
+    try {
+      await api.patch(`/voters/${observacionesModalVoter.id}`, { observaciones: observacionesEdit.trim() || null })
+      setVoters(prev => prev.map(v => v.id === observacionesModalVoter.id ? { ...v, observaciones: observacionesEdit.trim() || null } : v))
+      setObservacionesModalVoter(null)
+    } catch (err) {
+      console.error('Error guardando observaciones:', err)
+    } finally {
+      setObservacionesSaving(false)
     }
   }
 
@@ -1862,6 +2007,7 @@ function VotersListPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Dir. puesto</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Estado</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Registro</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Observaciones</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Acciones</th>
               </tr>
             </thead>
@@ -1881,6 +2027,16 @@ function VotersListPage() {
                   <td className="px-4 py-3 max-w-[180px] truncate" title={voter.direccion_puesto}>{voter.direccion_puesto || '-'}</td>
                   <td className="px-4 py-3">{getStatusBadge(voter.estado_validacion, voter.discrepancias_verifik)}</td>
                   <td className="px-4 py-3 text-sm se-foot-muted whitespace-nowrap">{new Date(voter.fecha_registro).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 max-w-[140px]">
+                    <button
+                      type="button"
+                      className="text-left w-full truncate block max-w-[140px] text-sm text-[rgba(234,240,255,.9)] hover:underline cursor-pointer bg-transparent border-0 p-0"
+                      title={voter.observaciones || 'Sin observaciones'}
+                      onClick={() => { setObservacionesModalVoter(voter); setObservacionesEdit(voter.observaciones || ''); }}
+                    >
+                      {(voter.observaciones || '-').slice(0, 25)}{(voter.observaciones && voter.observaciones.length > 25) ? '…' : ''}
+                    </button>
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {(voter.estado_validacion === 'revision' || voter.estado_validacion === 'sin_verificar' || voter.estado_validacion === 'inconsistente') && (
                       <span className="inline-flex gap-2">
@@ -1958,19 +2114,55 @@ function VotersListPage() {
               <div>
                 <label className="form-label se-label block mb-1">Departamento</label>
                 <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-                  <input type="text" className="se-input flex-1 min-w-0 px-3 py-2" value={editFormData.departamento} onChange={(e) => setEditFormData(prev => ({ ...prev, departamento: e.target.value }))} />
+                  <select className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={editFormData.departamento} onChange={(e) => {
+                    const value = e.target.value
+                    const municipios = territoriosData?.municipiosByDepto[value] || []
+                    setEditMunicipiosFiltrados(municipios)
+                    setEditPuestosFiltrados([])
+                    setEditDireccionesFiltradas([])
+                    setEditFormData(prev => ({ ...prev, departamento: value, municipio: '', lugar_votacion: '', direccion_puesto: '' }))
+                  }} disabled={!territoriosData}>
+                    <option value="">{territoriosData ? 'Seleccionar...' : 'Cargando...'}</option>
+                    {(territoriosData?.departamentos || []).map(depto => (
+                      <option key={depto} value={depto}>{depto}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div>
                 <label className="form-label se-label block mb-1">Municipio</label>
                 <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-                  <input type="text" className="se-input flex-1 min-w-0 px-3 py-2" value={editFormData.municipio} onChange={(e) => setEditFormData(prev => ({ ...prev, municipio: e.target.value }))} />
+                  <select className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={editFormData.municipio} onChange={(e) => {
+                    const value = e.target.value
+                    const key = editFormData.departamento + '|' + value
+                    const puestos = territoriosData?.puestosByDeptoMun[key] || []
+                    setEditPuestosFiltrados(puestos)
+                    setEditDireccionesFiltradas([])
+                    setEditFormData(prev => ({ ...prev, municipio: value, lugar_votacion: '', direccion_puesto: '' }))
+                  }} disabled={!editFormData.departamento}>
+                    <option value="">{editFormData.departamento ? 'Seleccionar...' : 'Seleccione primero un departamento'}</option>
+                    {editMunicipiosFiltrados.map(muni => (
+                      <option key={muni} value={muni}>{muni}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div>
                 <label className="form-label se-label block mb-1">Lugar de Votación</label>
                 <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-                  <input type="text" className="se-input flex-1 min-w-0 px-3 py-2" value={editFormData.lugar_votacion} onChange={(e) => setEditFormData(prev => ({ ...prev, lugar_votacion: e.target.value }))} />
+                  <select className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={editFormData.lugar_votacion} onChange={(e) => {
+                    const value = e.target.value
+                    const key = editFormData.departamento + '|' + editFormData.municipio + '|' + value
+                    const direcciones = territoriosData?.direccionesByDeptoMunPuesto[key] || []
+                    setEditDireccionesFiltradas(direcciones)
+                    const unaSola = direcciones.length === 1 ? direcciones[0] : ''
+                    setEditFormData(prev => ({ ...prev, lugar_votacion: value, direccion_puesto: unaSola }))
+                  }} disabled={!editFormData.municipio}>
+                    <option value="">{editFormData.municipio ? 'Seleccionar...' : 'Seleccione primero departamento y municipio'}</option>
+                    {editPuestosFiltrados.map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div>
@@ -1982,7 +2174,12 @@ function VotersListPage() {
               <div>
                 <label className="form-label se-label block mb-1">Dirección del Puesto</label>
                 <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-                  <input type="text" className="se-input flex-1 min-w-0 px-3 py-2" value={editFormData.direccion_puesto} onChange={(e) => setEditFormData(prev => ({ ...prev, direccion_puesto: e.target.value }))} />
+                  <select className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={editFormData.direccion_puesto} onChange={(e) => setEditFormData(prev => ({ ...prev, direccion_puesto: e.target.value }))} disabled={!editFormData.lugar_votacion}>
+                    <option value="">{editFormData.lugar_votacion ? 'Seleccionar...' : 'Seleccione primero el lugar de votación'}</option>
+                    {editDireccionesFiltradas.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="border-t border-[rgba(255,255,255,.1)] pt-4 mt-2">
@@ -2028,6 +2225,25 @@ function VotersListPage() {
             <div className="pt-4 mt-4 border-t border-[rgba(255,255,255,.1)] flex justify-end gap-2">
               <button type="button" onClick={() => setEditVoter(null)} className="btn se-btn-soft">Cerrar</button>
               <button type="button" onClick={handleEditSave} disabled={editSaving} className="btn se-btn-primary">{editSaving ? 'Guardando...' : 'Guardar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {observacionesModalVoter && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setObservacionesModalVoter(null)}>
+          <div className="se-modal max-w-lg w-full max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="se-title mb-2">Observaciones – {observacionesModalVoter.nombre}</h2>
+            <p className="se-foot-muted text-sm mb-4">Cédula: {observacionesModalVoter.cedula}</p>
+            <textarea
+              className="se-input w-full min-h-[120px] px-3 py-2 rounded-2xl resize-y"
+              value={observacionesEdit}
+              onChange={(e) => setObservacionesEdit(e.target.value)}
+              placeholder="Escriba o edite las observaciones..."
+            />
+            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[rgba(255,255,255,.1)]">
+              <button type="button" onClick={() => setObservacionesModalVoter(null)} className="btn se-btn-soft">Cerrar</button>
+              <button type="button" onClick={handleObservacionesSave} disabled={observacionesSaving} className="btn se-btn-primary">{observacionesSaving ? 'Guardando...' : 'Guardar'}</button>
             </div>
           </div>
         </div>

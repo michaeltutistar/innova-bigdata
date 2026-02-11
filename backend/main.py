@@ -128,10 +128,19 @@ class Sufragante(Base):
     lider_id = Column(Integer, ForeignKey("lideres.id"), index=True)
     usuario_registro = Column(String(100))
     fecha_registro = Column(DateTime, default=datetime.utcnow)
+    observaciones = Column(Text, nullable=True)
 
     lider = relationship("Lider", back_populates="sufragantes")
 
 Base.metadata.create_all(bind=engine)
+
+# Migración: columna observaciones (si la tabla ya existía)
+try:
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE sufragantes ADD COLUMN observaciones TEXT"))
+        conn.commit()
+except Exception:
+    pass  # Columna ya existe o BD sin tabla sufragantes
 
 # =====================
 # Pydantic Models
@@ -273,6 +282,7 @@ class SufraganteResponse(BaseModel):
     lider_id: Optional[int]
     usuario_registro: Optional[str]
     fecha_registro: datetime
+    observaciones: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -291,6 +301,7 @@ class SufraganteUpdate(BaseModel):
     direccion_puesto: Optional[str] = None
     estado_validacion: Optional[str] = Field(None, pattern="^(verificado|revision|inconsistente|sin_verificar)$")
     discrepancias: Optional[List[str]] = None
+    observaciones: Optional[str] = None
 
 class DashboardMetrics(BaseModel):
     total_lideres: int
@@ -1180,6 +1191,8 @@ async def actualizar_sufragante(
             sufragante.celular = cel
     if "direccion_residencia" in update and update["direccion_residencia"]:
         sufragante.direccion_residencia = normalizar_texto(update["direccion_residencia"])[:500]
+    if "observaciones" in update:
+        sufragante.observaciones = (update["observaciones"] or "").strip() or None
 
     db.commit()
     db.refresh(sufragante)
@@ -1226,6 +1239,7 @@ def _parse_excel_masivo(contents: bytes) -> List[dict]:
     idx_mun = _col_index(header_row, ["MUNICIPIO"], 7)
     idx_lugar = _col_index(header_row, ["LUGAR DE VOTACION", "LUGAR VOTACION"], 8)
     idx_mesa = _col_index(header_row, ["MESA DE VOTACION", "MESA VOTACION"], 9)
+    idx_observaciones = _col_index(header_row, ["OBSERVACIONES"], -1)
     out = []
     for row_idx, row in enumerate(rows[1:], start=2):
         if not row or all(c is None or (isinstance(c, str) and not str(c).strip()) for c in row):
@@ -1250,6 +1264,7 @@ def _parse_excel_masivo(contents: bytes) -> List[dict]:
         mun = (str(row[idx_mun] or "").strip() if idx_mun < len(row) else "") or ""
         lugar = (str(row[idx_lugar] or "").strip() if idx_lugar < len(row) else "") or ""
         mesa = (str(row[idx_mesa] or "").strip() if idx_mesa < len(row) else "") or ""
+        observaciones = (str(row[idx_observaciones] or "").strip() if idx_observaciones >= 0 and idx_observaciones < len(row) else "") or ""
         try:
             edad = int(edad_val) if edad_val is not None else None
         except (TypeError, ValueError):
@@ -1265,6 +1280,7 @@ def _parse_excel_masivo(contents: bytes) -> List[dict]:
             "municipio": mun or None,
             "lugar_votacion": lugar or None,
             "mesa_votacion": mesa or None,
+            "observaciones": observaciones or None,
         })
     return out
 
@@ -1347,7 +1363,8 @@ async def upload_sufragantes_masivo(
                 municipio=normalizar_texto(r["municipio"]) if (r.get("municipio") or "").strip() else None,
                 lugar_votacion=normalizar_texto(lugar_val) if lugar_val else None,
                 mesa_votacion=mesa_val or None,
-                direccion_puesto=None
+                direccion_puesto=None,
+                observaciones=(r.get("observaciones") or "").strip() or None,
             )
             db.add(suf)
             db.commit()
