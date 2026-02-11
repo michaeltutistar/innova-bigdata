@@ -1119,7 +1119,7 @@ function VoterRegistrationPage() {
               <select className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={massLeader} onChange={(e) => setMassLeader(e.target.value)} required>
                 <option value="">Seleccionar líder...</option>
                 {leaders.map(l => (
-                  <option key={l.id} value={l.id}>{l.nombre} - {l.cedula}</option>
+                  <option key={l.id} value={l.id}>{[l.nombre, l.departamento, l.municipio].filter(Boolean).join(' - ')}</option>
                 ))}
               </select>
             </div>
@@ -1175,7 +1175,7 @@ function VoterRegistrationPage() {
               <select className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={selectedLeader || ''} onChange={(e) => setSelectedLeader(e.target.value ? parseInt(e.target.value) : null)}>
                 <option value="">Seleccionar líder...</option>
                 {leaders.map(l => (
-                  <option key={l.id} value={l.id}>{l.nombre} - {l.cedula}</option>
+                  <option key={l.id} value={l.id}>{[l.nombre, l.departamento, l.municipio].filter(Boolean).join(' - ')}</option>
                 ))}
               </select>
             </div>
