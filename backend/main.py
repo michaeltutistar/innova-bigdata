@@ -1612,6 +1612,88 @@ async def export_dashboard_excel(
     )
 
 
+@app.get("/export/leaders/xlsx")
+async def export_leaders_excel(
+    leader_ids: Optional[str] = Query(None, description="IDs de líderes separados por coma; si no se envía, se exportan todos"),
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Exportar registros por líder y totales a Excel. Solo superadmin.
+    Si leader_ids no se envía, se exportan todos los líderes activos.
+    """
+    query_lideres = db.query(Lider).filter(Lider.activo == True).order_by(Lider.nombre)
+    if leader_ids and leader_ids.strip():
+        try:
+            ids = [int(x.strip()) for x in leader_ids.split(",") if x.strip()]
+            if ids:
+                query_lideres = query_lideres.filter(Lider.id.in_(ids))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="leader_ids debe ser una lista de números separados por coma")
+
+    lideres = query_lideres.all()
+    if not lideres:
+        raise HTTPException(status_code=404, detail="No hay líderes para exportar")
+
+    # Resumen por líder (totales)
+    wb = openpyxl.Workbook()
+    ws_resumen = wb.active
+    ws_resumen.title = "Resumen por líder"
+    ws_resumen.append(["Líder", "Cédula", "Total sufragantes", "Verificados", "Sin verificar", "En revisión", "Inconsistentes"])
+    for lid in lideres:
+        counts = db.query(
+            func.count(Sufragante.id).label("total"),
+            func.count(case((Sufragante.estado_validacion == "verificado", 1), else_=None)).label("verificados"),
+            func.count(case((Sufragante.estado_validacion == "sin_verificar", 1), else_=None)).label("sin_verificar"),
+            func.count(case((Sufragante.estado_validacion == "revision", 1), else_=None)).label("en_revision"),
+            func.count(case((Sufragante.estado_validacion == "inconsistente", 1), else_=None)).label("inconsistentes"),
+        ).filter(Sufragante.lider_id == lid.id).first()
+        ws_resumen.append([
+            lid.nombre or "",
+            lid.cedula or "",
+            counts[0] or 0,
+            counts[1] or 0,
+            counts[2] or 0,
+            counts[3] or 0,
+            counts[4] or 0,
+        ])
+
+    # Detalle: sufragantes de los líderes seleccionados
+    ws_detalle = wb.create_sheet("Sufragantes")
+    ws_detalle.append(["Líder", "Nombre", "Cédula", "Edad", "Celular", "Departamento", "Municipio", "Lugar votación", "Mesa", "Estado", "Fecha registro"])
+    lid_ids = [l.id for l in lideres]
+    sufragantes = db.query(Sufragante).filter(Sufragante.lider_id.in_(lid_ids)).order_by(Sufragante.lider_id, Sufragante.fecha_registro.desc()).all()
+    lideres_by_id = {l.id: l for l in lideres}
+    for s in sufragantes:
+        lid = lideres_by_id.get(s.lider_id)
+        lid_nombre = lid.nombre if lid else ""
+        ws_detalle.append([
+            lid_nombre,
+            s.nombre or "",
+            s.cedula or "",
+            s.edad,
+            s.celular or "",
+            s.departamento or "",
+            s.municipio or "",
+            s.lugar_votacion or "",
+            s.mesa_votacion or "",
+            s.estado_validacion or "",
+            s.fecha_registro.strftime("%Y-%m-%d %H:%M") if s.fecha_registro else "",
+        ])
+
+    buffer = BytesIO()
+    wb.save(buffer)
+    content = buffer.getvalue()
+    buffer.close()
+    filename = f"lideres_sufragantes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    logger.info(f"Usuario {current_user.username} exportó Excel de líderes")
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
 @app.get("/export/xlsx")
 async def export_excel(
     db: Session = Depends(get_db),

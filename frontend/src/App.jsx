@@ -1344,6 +1344,7 @@ function VoterRegistrationPage() {
           </button>
         </div>
       </form>
+      {success && <div className="alert alert-success mt-4">{success}</div>}
     </div>
   )
 }
@@ -1372,6 +1373,8 @@ function LeadersPage() {
   const [success, setSuccess] = useState('')
   const [departamentosData, setDepartamentosData] = useState({ departamentos: [], municipios: {} })
   const [municipiosFiltrados, setMunicipiosFiltrados] = useState([])
+  const [selectedLeaderIds, setSelectedLeaderIds] = useState(new Set())
+  const [exportLeadersLoading, setExportLeadersLoading] = useState(false)
 
   useEffect(() => {
     loadLeaders()
@@ -1501,6 +1504,47 @@ function LeadersPage() {
     }
   }
 
+  const toggleLeaderSelection = (id) => {
+    setSelectedLeaderIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAllLeaders = () => {
+    if (selectedLeaderIds.size === leaders.length) {
+      setSelectedLeaderIds(new Set())
+    } else {
+      setSelectedLeaderIds(new Set(leaders.map(l => l.id)))
+    }
+  }
+
+  const handleExportLeadersExcel = async () => {
+    setExportLeadersLoading(true)
+    setError('')
+    try {
+      const params = new URLSearchParams()
+      if (selectedLeaderIds.size > 0) {
+        params.set('leader_ids', [...selectedLeaderIds].join(','))
+      }
+      const response = await api.get(`/export/leaders/xlsx?${params.toString()}`, { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `lideres_sufragantes_${new Date().toISOString().split('T')[0]}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      a.remove()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Error al exportar')
+    } finally {
+      setExportLeadersLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -1513,19 +1557,28 @@ function LeadersPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <h1 className="se-title mb-0">Gestión de Líderes</h1>
-        <button type="button" onClick={openCreateModal} className="btn se-btn-primary">
-          <i className="bi bi-person-plus me-2"></i>Nuevo Líder
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          <button type="button" onClick={handleExportLeadersExcel} disabled={exportLeadersLoading || leaders.length === 0} className="btn se-btn-soft">
+            <i className="bi bi-file-earmark-excel me-2"></i>{exportLeadersLoading ? 'Exportando...' : 'Exportar Excel'}
+          </button>
+          <button type="button" onClick={openCreateModal} className="btn se-btn-primary">
+            <i className="bi bi-person-plus me-2"></i>Nuevo Líder
+          </button>
+        </div>
       </div>
 
       {success && <div className="alert alert-success">{success}</div>}
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="se-cardx">
+        <p className="se-foot-muted text-sm mb-3">Seleccione los líderes a exportar o deje ninguno para exportar todos. Luego pulse «Exportar Excel».</p>
         <div className="overflow-x-auto rounded-xl border border-[rgba(255,255,255,.08)]">
           <table className="se-table min-w-full divide-y divide-[rgba(255,255,255,.08)]">
             <thead>
               <tr>
+                <th className="px-4 py-3 text-left w-10">
+                  <input type="checkbox" checked={leaders.length > 0 && selectedLeaderIds.size === leaders.length} onChange={toggleSelectAllLeaders} title="Seleccionar todos" className="rounded border-[rgba(255,255,255,.3)]" />
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Nombre</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Cédula</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Celular</th>
@@ -1538,6 +1591,9 @@ function LeadersPage() {
             <tbody>
               {leaders.map(leader => (
                 <tr key={leader.id} className="border-t border-[rgba(255,255,255,.06)]">
+                  <td className="px-4 py-3">
+                    <input type="checkbox" checked={selectedLeaderIds.has(leader.id)} onChange={() => toggleLeaderSelection(leader.id)} className="rounded border-[rgba(255,255,255,.3)]" />
+                  </td>
                   <td className="px-4 py-3">{leader.nombre}</td>
                   <td className="px-4 py-3">{leader.cedula}</td>
                   <td className="px-4 py-3">{leader.celular}</td>
