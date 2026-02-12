@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ultimo_login TIMESTAMP,
     reset_token VARCHAR(64),
-    reset_token_expires TIMESTAMP
+    reset_token_expires TIMESTAMP,
+    email VARCHAR(255)
 );
 
 -- Tabla: lideres

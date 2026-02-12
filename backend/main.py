@@ -79,6 +79,7 @@ class Usuario(Base):
     ultimo_login = Column(DateTime)
     reset_token = Column(String(64), nullable=True, index=True)
     reset_token_expires = Column(DateTime, nullable=True)
+    email = Column(String(255), nullable=True)
 
 class Lider(Base):
     __tablename__ = "lideres"
@@ -160,6 +161,7 @@ class UsuarioCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=6)
     rol: str = Field(..., pattern="^(superadmin|operador)$")
+    email: Optional[str] = Field(None, max_length=255)
 
 class UsuarioResponse(BaseModel):
     id: int
@@ -168,12 +170,14 @@ class UsuarioResponse(BaseModel):
     activo: bool
     fecha_creacion: datetime
     ultimo_login: Optional[datetime] = None
+    email: Optional[str] = None
 
     class Config:
         from_attributes = True
 
 class UsuarioUpdateActivo(BaseModel):
-    activo: bool
+    activo: Optional[bool] = None
+    email: Optional[str] = Field(None, max_length=255)
 
 class ForgotPasswordRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
@@ -614,6 +618,7 @@ def startup_add_discrepancias_column():
                     pass
                 conn.execute(text("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token VARCHAR(64)"))
                 conn.execute(text("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP"))
+                conn.execute(text("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email VARCHAR(255)"))
             try:
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_usuarios_reset_token ON usuarios(reset_token)"))
             except Exception:
@@ -707,7 +712,8 @@ async def register(usuario_data: UsuarioCreate,
         username=usuario_data.username,
         password_hash=get_password_hash(usuario_data.password),
         rol=usuario_data.rol,
-        activo=True
+        activo=True,
+        email=usuario_data.email.strip() if usuario_data.email and usuario_data.email.strip() else None
     )
 
     db.add(nuevo_usuario)
@@ -809,10 +815,13 @@ async def actualizar_usuario_activo(
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     if usuario.username == current_user.username:
         raise HTTPException(status_code=400, detail="No puede desactivar su propio usuario")
-    usuario.activo = data.activo
+    if data.activo is not None:
+        usuario.activo = data.activo
+    if data.email is not None:
+        usuario.email = data.email.strip() or None
     db.commit()
     db.refresh(usuario)
-    logger.info(f"Usuario {current_user.username} actualizó activo={data.activo} para {usuario.username}")
+    logger.info(f"Usuario {current_user.username} actualizó usuario {usuario.username}")
     return usuario
 
 # =====================
