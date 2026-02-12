@@ -287,38 +287,29 @@ function LoginPage() {
   )
 }
 
-// Recuperación de contraseña (solo operadores)
+// Recuperación de contraseña por correo (operadores y admins con email registrado)
 function ForgotPasswordPage() {
   const [username, setUsername] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [resetLink, setResetLink] = useState('')
   const [message, setMessage] = useState('')
+  const [isSuccess, setIsSuccess] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    setResetLink('')
     setMessage('')
+    setIsSuccess(false)
     setLoading(true)
     try {
       const res = await api.post('/auth/forgot-password', { username: username.trim() })
-      if (res.data?.reset_token) {
-        const link = `${window.location.origin}/reset-password?token=${encodeURIComponent(res.data.reset_token)}`
-        setResetLink(link)
-        setMessage(res.data.message || 'Use el enlace para restablecer su contraseña (válido 1 hora).')
-      } else {
-        setMessage(res.data?.message || 'La recuperación solo está disponible para operadores. Contacte al administrador.')
-      }
+      setIsSuccess(res.data?.success === true)
+      setMessage(res.data?.message || 'Si el usuario existe y tiene correo registrado, recibirá un enlace en unos minutos. Revise su bandeja de entrada y spam.')
     } catch (err) {
       setError(err.response?.data?.detail || 'Error al solicitar restablecimiento')
     } finally {
       setLoading(false)
     }
-  }
-
-  const copyLink = () => {
-    if (resetLink) navigator.clipboard.writeText(resetLink)
   }
 
   return (
@@ -329,12 +320,16 @@ function ForgotPasswordPage() {
           <div className="se-card shadow-lg">
             <div className="se-card-head">
               <h1 className="se-title mb-1">Recuperar contraseña</h1>
-              <p className="se-subtitle mb-0">Solo para operadores. Ingrese su usuario y se generará un enlace.</p>
+              <p className="se-subtitle mb-0">Ingrese su usuario. Si tiene correo registrado, recibirá un enlace por email.</p>
             </div>
             <div className="se-card-body">
               <form onSubmit={handleSubmit} className="space-y-4">
                 {error && <div className="alert alert-error">{error}</div>}
-                {message && !resetLink && <div className="alert alert-warning">{message}</div>}
+                {message && (
+                  <div className={`alert ${isSuccess ? 'alert-success' : 'alert-warning'}`}>
+                    {message}
+                  </div>
+                )}
 
                 <div>
                   <label className="form-label se-label block mb-1">Usuario</label>
@@ -351,20 +346,9 @@ function ForgotPasswordPage() {
                   </div>
                 </div>
                 <button type="submit" className="btn se-btn-primary w-full" disabled={loading}>
-                  {loading ? 'Generando...' : 'Generar enlace'}
+                  {loading ? 'Enviando...' : 'Enviar enlace por correo'}
                 </button>
               </form>
-
-              {resetLink && (
-                <div className="mt-6 p-4 rounded-2xl border border-[rgba(34,197,94,.35)] bg-[rgba(34,197,94,.15)]">
-                  <p className="text-sm mb-2 text-[rgba(234,240,255,.9)]">{message}</p>
-                  <div className="flex gap-2">
-                    <input type="text" readOnly value={resetLink} className="se-input flex-1 text-sm px-3 py-2 rounded-xl bg-[rgba(0,0,0,.2)] border border-[rgba(255,255,255,.12)]" />
-                    <button type="button" onClick={copyLink} className="btn se-btn-soft whitespace-nowrap">Copiar</button>
-                  </div>
-                  <p className="text-xs se-foot-muted mt-2">Abra este enlace en el navegador para definir la nueva contraseña.</p>
-                </div>
-              )}
 
               <p className="mt-6 text-center">
                 <Link to="/login" className="se-link">Volver al inicio de sesión</Link>

@@ -25,6 +25,9 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS}
       - HOST=${HOST:-0.0.0.0}
       - PORT=${PORT:-8000}
+      - GMAIL_USER=${GMAIL_USER}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
+      - RESET_PASSWORD_BASE_URL=${RESET_PASSWORD_BASE_URL:-https://www.innovabigdata.com}
     restart: unless-stopped
     volumes:
       - backend_data:/app/data

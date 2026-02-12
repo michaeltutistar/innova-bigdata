@@ -6,6 +6,9 @@ Backend con FastAPI - API REST para gestión de datos electorales
 import os
 import logging
 import secrets
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from typing import List, Optional
 import json
@@ -36,6 +39,11 @@ VERIFIK_API_URL = os.getenv("VERIFIK_API_URL", "https://api.verifik.co/v2/co/reg
 VERIFIK_TOKEN = os.getenv("VERIFIK_TOKEN", "")
 
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://innovabigdata.com,http://localhost:5173").split(",")
+
+# Recuperación de contraseña por email (Gmail)
+GMAIL_USER = os.getenv("GMAIL_USER", "")
+GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD", "")
+RESET_PASSWORD_BASE_URL = os.getenv("RESET_PASSWORD_BASE_URL", "https://www.innovabigdata.com").rstrip("/")
 
 # DATABASE_URL: usar RDS_* si están definidos (evita problemas con # y $ en la contraseña en .env)
 _rds_host = os.getenv("RDS_HOST")
@@ -737,30 +745,55 @@ async def get_current_user_info(current_user: TokenData = Depends(get_current_us
 
 RESET_TOKEN_EXPIRE_HOURS = 1
 
+def _send_reset_password_email(to_email: str, reset_link: str, username: str) -> bool:
+    """Envía correo con el enlace de restablecimiento de contraseña (Gmail SMTP)."""
+    if not GMAIL_USER or not GMAIL_APP_PASSWORD:
+        logger.warning("GMAIL_USER o GMAIL_APP_PASSWORD no configurados; no se envía correo.")
+        return False
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "InnovaBigData - Restablecer contraseña"
+        msg["From"] = f"InnovaBigData <{GMAIL_USER}>"
+        msg["To"] = to_email
+        text = f"""Hola,\n\nHas solicitado restablecer la contraseña del usuario {username} en InnovaBigData.\n\nHaz clic en el siguiente enlace (válido 1 hora):\n{reset_link}\n\nSi no solicitaste este correo, ignóralo.\n\n— InnovaBigData"""
+        html = f"""<p>Hola,</p><p>Has solicitado restablecer la contraseña del usuario <strong>{username}</strong> en InnovaBigData.</p><p><a href="{reset_link}">Haz clic aquí para restablecer tu contraseña</a> (válido 1 hora).</p><p>Si no solicitaste este correo, ignóralo.</p><p>— InnovaBigData</p>"""
+        msg.attach(MIMEText(text, "plain", "utf-8"))
+        msg.attach(MIMEText(html, "html", "utf-8"))
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+            server.sendmail(GMAIL_USER, to_email, msg.as_string())
+        logger.info(f"Correo de recuperación enviado a {to_email}")
+        return True
+    except Exception as e:
+        logger.exception(f"Error enviando correo de recuperación a {to_email}: {e}")
+        return False
+
 @app.post("/auth/forgot-password")
 async def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
     """
-    Solicitar restablecimiento de contraseña. Solo operadores.
-    Devuelve un token para usar en /auth/reset-password (válido 1 hora).
-    El enlace debe abrirse en el navegador para definir la nueva contraseña.
+    Solicitar restablecimiento de contraseña por correo. Disponible para operadores y superadmin:
+    se envía un enlace al email registrado del usuario (campo email en la tabla usuarios).
     """
     usuario = db.query(Usuario).filter(Usuario.username == body.username.strip()).first()
     if not usuario:
-        # No revelar si el usuario existe
-        return {"success": True, "message": "Si el usuario es un operador, use el enlace que se mostrará."}
-    if usuario.rol != "operador":
-        return {"success": True, "message": "La recuperación de contraseña solo está disponible para operadores."}
+        return {"success": True, "message": "Si el usuario existe y tiene correo registrado, recibirá un enlace en unos minutos. Revise su bandeja de entrada y spam."}
     if not usuario.activo:
-        return {"success": True, "message": "Si el usuario es un operador, use el enlace que se mostrará."}
+        return {"success": True, "message": "Si el usuario existe y tiene correo registrado, recibirá un enlace en unos minutos. Revise su bandeja de entrada y spam."}
+    email = (usuario.email or "").strip()
+    if not email:
+        return {"success": True, "message": "Este usuario no tiene correo registrado. Contacte al administrador para que asigne un correo y pueda recuperar la contraseña."}
     token = secrets.token_urlsafe(32)
     usuario.reset_token = token
     usuario.reset_token_expires = datetime.utcnow() + timedelta(hours=RESET_TOKEN_EXPIRE_HOURS)
     db.commit()
+    reset_link = f"{RESET_PASSWORD_BASE_URL}/reset-password?token={quote_plus(token)}"
+    sent = _send_reset_password_email(email, reset_link, usuario.username)
+    if not sent:
+        return {"success": False, "message": "No se pudo enviar el correo. Intente más tarde o contacte al administrador."}
     return {
         "success": True,
-        "reset_token": token,
-        "expires_in_hours": RESET_TOKEN_EXPIRE_HOURS,
-        "message": "Use el enlace generado para restablecer la contraseña (válido 1 hora)."
+        "message": "Si el usuario existe y tiene correo registrado, recibirá un enlace en unos minutos. Revise su bandeja de entrada y spam."
     }
 
 @app.post("/auth/reset-password")
