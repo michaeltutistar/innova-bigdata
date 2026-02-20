@@ -986,12 +986,8 @@ function VoterRegistrationPage() {
     setError('')
     setSuccess('')
 
-    if (!noTieneCelular) {
-      const cel = (formData.celular || '').trim()
-      if (!cel) {
-        setError('Ingrese el celular o marque "No tiene celular"')
-        return
-      }
+    const cel = (formData.celular || '').trim()
+    if (!noTieneCelular && cel) {
       if (cel.length !== 10 || !/^\d+$/.test(cel)) {
         setError('El celular debe tener 10 dígitos numéricos')
         return
@@ -1001,23 +997,28 @@ function VoterRegistrationPage() {
         return
       }
     }
+    const edadNum = formData.edad === '' || formData.edad == null ? null : parseInt(formData.edad, 10)
+    if (edadNum !== null && (isNaN(edadNum) || edadNum < 18 || edadNum > 120)) {
+      setError('La edad debe estar entre 18 y 120')
+      return
+    }
 
     setLoading(true)
 
     try {
       await api.post('/voters', {
-        nombre: formData.nombre,
-        cedula: formData.cedula,
-        edad: parseInt(formData.edad, 10),
-        celular: noTieneCelular ? null : (formData.celular || '').trim(),
-        direccion_residencia: formData.direccion_residencia,
-        genero: formData.genero,
+        nombre: formData.nombre.trim(),
+        cedula: formData.cedula.trim(),
+        edad: edadNum,
+        celular: noTieneCelular || !cel ? null : cel,
+        direccion_residencia: (formData.direccion_residencia || '').trim() || null,
+        genero: (formData.genero || '').trim() || null,
         lider_id: selectedLeader || null,
-        departamento: formData.departamento || null,
-        municipio: formData.municipio || null,
-        lugar_votacion: formData.lugar_votacion || null,
-        mesa_votacion: formData.mesa_votacion || null,
-        direccion_puesto: formData.direccion_puesto || null,
+        departamento: (formData.departamento || '').trim() || null,
+        municipio: (formData.municipio || '').trim() || null,
+        lugar_votacion: (formData.lugar_votacion || '').trim() || null,
+        mesa_votacion: (formData.mesa_votacion || '').trim() || null,
+        direccion_puesto: (formData.direccion_puesto || '').trim() || null,
         estado_validacion: estadoValidacion != null ? estadoValidacion : 'sin_verificar',
         discrepancias: estadoValidacion === 'revision' && discrepancias.length ? discrepancias : null
       })
@@ -1270,10 +1271,10 @@ function VoterRegistrationPage() {
           <div className="se-section-title"><i className="bi bi-person-lines-fill"></i> Datos adicionales</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="form-label se-label block mb-1">Edad * (18-120)</label>
+              <label className="form-label se-label block mb-1">Edad (18-120)</label>
               <div className="se-inputgroup flex rounded-2xl overflow-hidden">
                 <span className="se-ig-icon flex items-center px-3"><i className="bi bi-calendar"></i></span>
-                <input type="number" name="edad" className="se-input flex-1 min-w-0 px-3 py-2" value={formData.edad} onChange={handleChange} required min={18} max={120} />
+                <input type="number" name="edad" className="se-input flex-1 min-w-0 px-3 py-2" value={formData.edad} onChange={handleChange} min={18} max={120} placeholder="18-120 (opcional)" />
               </div>
             </div>
             <div>
@@ -1294,17 +1295,17 @@ function VoterRegistrationPage() {
             </div>
           </div>
           <div className="mt-4">
-            <label className="form-label se-label block mb-1">Dirección de Residencia *</label>
+            <label className="form-label se-label block mb-1">Dirección de Residencia</label>
             <div className="se-inputgroup flex rounded-2xl overflow-hidden">
               <span className="se-ig-icon flex items-center px-3"><i className="bi bi-geo-alt"></i></span>
-              <input type="text" name="direccion_residencia" className="se-input flex-1 min-w-0 px-3 py-2" value={formData.direccion_residencia} onChange={handleChange} required placeholder="Dirección completa" />
+              <input type="text" name="direccion_residencia" className="se-input flex-1 min-w-0 px-3 py-2" value={formData.direccion_residencia} onChange={handleChange} placeholder="Dirección completa (opcional)" />
             </div>
           </div>
           <div className="mt-4">
-            <label className="form-label se-label block mb-1">Género *</label>
+            <label className="form-label se-label block mb-1">Género</label>
             <div className="se-inputgroup flex rounded-2xl overflow-hidden">
-              <select name="genero" className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={formData.genero} onChange={handleChange} required>
-                <option value="">Seleccionar...</option>
+              <select name="genero" className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent" value={formData.genero} onChange={handleChange}>
+                <option value="">Seleccionar... (opcional)</option>
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
                 <option value="Otro">Otro</option>
@@ -1314,7 +1315,7 @@ function VoterRegistrationPage() {
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-[rgba(255,255,255,.1)]">
-          <p className="se-foot-muted text-sm w-full">Puede registrar sin verificar; quedará «Sin verificar».</p>
+          <p className="se-foot-muted text-sm w-full">Solo son obligatorios nombre y cédula; el resto es opcional y se puede editar después. Puede registrar sin verificar; quedará «Sin verificar».</p>
           {SHOW_VERIFIK_BUTTON && (
             <button type="button" onClick={verifyCedula} className="btn se-btn-soft" disabled={verifikLoading || !formData.cedula || formData.cedula.length < 6}>
               {verifikLoading ? 'Verificando...' : 'Verificar con Verifik'}

@@ -243,23 +243,20 @@ class VerifyRequest(BaseModel):
     address: Optional[str] = None
 
 class SufraganteCreate(BaseModel):
-    """Modelo para crear sufragante (datos Verifik ingresados manualmente + estado de verificación)"""
+    """Modelo para crear sufragante. Solo nombre y cédula obligatorios; el resto opcional (vacío → null o default)."""
     nombre: str = Field(..., min_length=2, max_length=200)
     cedula: str = Field(..., min_length=6, max_length=10, pattern="^[0-9]+$")
-    edad: int = Field(..., ge=18, le=120)
+    edad: Optional[int] = Field(None, ge=18, le=120)  # Si no se envía, backend usa 18
     celular: Optional[str] = None  # Opcional: null o vacío = "No tiene"; si se envía debe ser 10 dígitos y empezar por 3
-    direccion_residencia: str = Field(..., min_length=5, max_length=500)
-    genero: Optional[str] = Field(None, pattern="^(M|F|Otro)$")  # None en registro masivo (Excel)
+    direccion_residencia: Optional[str] = Field(None, max_length=500)  # Si vacío, backend usa "Por definir"
+    genero: Optional[str] = Field(None, pattern="^(M|F|Otro)$")
     lider_id: Optional[int] = None
-    # Datos de Verifik (ingresados manualmente)
     departamento: Optional[str] = None
     municipio: Optional[str] = None
     lugar_votacion: Optional[str] = None
     mesa_votacion: Optional[str] = None
     direccion_puesto: Optional[str] = None
-    # Estado determinado al hacer "Verificar" (comparación manual vs Verifik)
-    estado_validacion: str = Field(..., pattern="^(verificado|revision|inconsistente|sin_verificar)$")
-    # Campos que no coincidieron (solo cuando estado=revision)
+    estado_validacion: str = Field(default="sin_verificar", pattern="^(verificado|revision|inconsistente|sin_verificar)$")
     discrepancias: Optional[List[str]] = None
 
     @field_validator("celular")
@@ -275,6 +272,13 @@ class SufraganteCreate(BaseModel):
         if v[0] != "3":
             raise ValueError("El celular debe iniciar por el número 3")
         return v
+
+    @field_validator("genero", mode="before")
+    @classmethod
+    def genero_vacio_a_none(cls, v):
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
+        return v.strip() if isinstance(v, str) else v
 
 class SufraganteResponse(BaseModel):
     id: int
@@ -1102,12 +1106,17 @@ async def crear_sufragante(
     if sufragante_data.celular and str(sufragante_data.celular).strip().upper() not in ("", "NO TIENE", "NO TIENE CELULAR"):
         celular_val = sufragante_data.celular.strip()
 
+    edad_val = sufragante_data.edad if sufragante_data.edad is not None else 18
+    dir_val = (sufragante_data.direccion_residencia or "").strip()
+    if not dir_val:
+        dir_val = "Por definir"
+
     nuevo_sufragante = Sufragante(
         nombre=nombre_normalizado,
         cedula=sufragante_data.cedula,
-        edad=sufragante_data.edad,
+        edad=edad_val,
         celular=celular_val,
-        direccion_residencia=sufragante_data.direccion_residencia,
+        direccion_residencia=dir_val[:500],
         genero=normalizar_genero(sufragante_data.genero),
         estado_validacion=sufragante_data.estado_validacion,
         discrepancias_verifik=discrepancias_json,
@@ -1360,7 +1369,7 @@ async def upload_sufragantes_masivo(
     for r in rows:
         nombre = (r.get("nombre") or "").strip()
         cedula = (r.get("cedula") or "").strip()
-        edad = r.get("edad")
+        edad_raw = r.get("edad")
         direccion = (r.get("direccion_residencia") or "").strip()
         if not nombre or len(nombre) < 2:
             errors.append(f"Fila {r['row']}: nombre inválido")
@@ -1368,12 +1377,16 @@ async def upload_sufragantes_masivo(
         if not cedula or len(cedula) < 6 or not cedula.isdigit():
             errors.append(f"Fila {r['row']}: cédula inválida (6-10 dígitos)")
             continue
-        if edad is None or edad < 18 or edad > 120:
-            errors.append(f"Fila {r['row']}: edad debe estar entre 18 y 120")
+        try:
+            edad_num = int(float(edad_raw)) if edad_raw not in (None, "") else None
+        except (TypeError, ValueError):
+            edad_num = None
+        if edad_num is not None and (edad_num < 18 or edad_num > 120):
+            errors.append(f"Fila {r['row']}: edad debe estar entre 18 y 120 (o vacío)")
             continue
-        if not direccion or len(direccion) < 5:
-            errors.append(f"Fila {r['row']}: dirección de residencia inválida")
-            continue
+        edad = edad_num if edad_num is not None and 18 <= edad_num <= 120 else 18
+        if not direccion:
+            direccion = "Por definir"
         celular = r.get("celular")
         if celular:
             celular = str(celular).strip()
