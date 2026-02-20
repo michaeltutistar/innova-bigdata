@@ -45,17 +45,44 @@ GMAIL_USER = os.getenv("GMAIL_USER", "")
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD", "")
 RESET_PASSWORD_BASE_URL = os.getenv("RESET_PASSWORD_BASE_URL", "https://www.innovabigdata.com").rstrip("/")
 
-# DATABASE_URL: usar RDS_* si están definidos (evita problemas con # y $ en la contraseña en .env)
-_rds_host = os.getenv("RDS_HOST")
-if _rds_host:
-    _rds_user = os.getenv("RDS_USER", "postgres")
-    _rds_password = os.getenv("RDS_PASSWORD", "")
-    _rds_db = os.getenv("RDS_DB", "innovabigdata")
-    _rds_port = os.getenv("RDS_PORT", "5432")
-    _safe_password = quote_plus(_rds_password)
-    DATABASE_URL = f"postgresql://{_rds_user}:{_safe_password}@{_rds_host}:{_rds_port}/{_rds_db}"
-else:
-    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@db:5432/innovabigdata")
+# DATABASE_URL: prioridad 1) AWS Secrets Manager, 2) RDS_* del .env, 3) DATABASE_URL
+def _get_database_url() -> str:
+    # 1) Si está configurado el secret de RDS en Secrets Manager, obtener credenciales de ahí (rotación automática)
+    secret_arn = os.getenv("AWS_RDS_SECRET_ARN")
+    secret_name = os.getenv("AWS_RDS_SECRET_NAME")
+    secret_id = secret_arn or secret_name
+    if secret_id:
+        try:
+            import boto3
+            import json
+            client = boto3.client("secretsmanager", region_name=os.getenv("AWS_REGION", "us-east-2"))
+            response = client.get_secret_value(SecretId=secret_id)
+            secret = json.loads(response["SecretString"])
+            user = secret.get("username", "postgres")
+            password = secret.get("password", "")
+            host = secret.get("host") or secret.get("hostname") or os.getenv("RDS_HOST")
+            port = secret.get("port", 5432)
+            dbname = secret.get("dbname") or secret.get("dbClusterIdentifier") or os.getenv("RDS_DB", "innovabigdata")
+            if host and password is not None:
+                safe_pwd = quote_plus(str(password))
+                return f"postgresql://{user}:{safe_pwd}@{host}:{port}/{dbname}?sslmode=require"
+        except Exception as e:
+            logger.warning("No se pudo obtener el secret de RDS desde Secrets Manager: %s. Usando RDS_* o DATABASE_URL.", e)
+
+    # 2) Variables RDS_* en .env
+    _rds_host = os.getenv("RDS_HOST")
+    if _rds_host:
+        _rds_user = os.getenv("RDS_USER", "postgres")
+        _rds_password = os.getenv("RDS_PASSWORD", "")
+        _rds_db = os.getenv("RDS_DB", "innovabigdata")
+        _rds_port = os.getenv("RDS_PORT", "5432")
+        _safe_password = quote_plus(_rds_password)
+        return f"postgresql://{_rds_user}:{_safe_password}@{_rds_host}:{_rds_port}/{_rds_db}?sslmode=require"
+
+    # 3) DATABASE_URL directa
+    return os.getenv("DATABASE_URL", "postgresql://postgres:postgres@db:5432/innovabigdata")
+
+DATABASE_URL = _get_database_url()
 
 # =====================
 # LOGGING

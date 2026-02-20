@@ -28,6 +28,9 @@ services:
       - GMAIL_USER=${GMAIL_USER}
       - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
       - RESET_PASSWORD_BASE_URL=${RESET_PASSWORD_BASE_URL:-https://www.innovabigdata.com}
+      - AWS_RDS_SECRET_ARN=${AWS_RDS_SECRET_ARN}
+      - AWS_RDS_SECRET_NAME=${AWS_RDS_SECRET_NAME}
+      - AWS_REGION=${AWS_REGION:-us-east-2}
     restart: unless-stopped
     volumes:
       - backend_data:/app/data
