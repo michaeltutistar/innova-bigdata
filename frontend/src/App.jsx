@@ -1736,9 +1736,16 @@ function VotersListPage() {
   const PAGE_SIZE = 20
   const [loading, setLoading] = useState(true)
   const [exportLoading, setExportLoading] = useState(false)
+  const isAdmin = user?.rol === 'superadmin'
+  const [leaders, setLeaders] = useState([])
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false)
+  const [deleteRowLoadingId, setDeleteRowLoadingId] = useState(null)
+  const [actionMessage, setActionMessage] = useState('')
+  const [actionError, setActionError] = useState('')
   const [filters, setFilters] = useState({
     estado: '',
-    municipio: ''
+    municipio: '',
+    lider_id: ''
   })
   const [editVoter, setEditVoter] = useState(null)
   const [editFormData, setEditFormData] = useState({ departamento: '', municipio: '', lugar_votacion: '', mesa_votacion: '', direccion_puesto: '' })
@@ -1760,6 +1767,11 @@ function VotersListPage() {
     loadTerritorios()
   }, [filters, page])
 
+  useEffect(() => {
+    if (!isAdmin) return
+    loadLeaders()
+  }, [isAdmin])
+
   const loadTerritorios = async () => {
     try {
       const response = await fetch('/Elecciones_Territoritoriales.csv')
@@ -1771,14 +1783,25 @@ function VotersListPage() {
     }
   }
 
+  const loadLeaders = async () => {
+    try {
+      const response = await api.get('/leaders/all')
+      setLeaders(response.data || [])
+    } catch (error) {
+      console.error('Error loading leaders:', error)
+    }
+  }
+
   const loadVoters = async () => {
     try {
       setLoading(true)
+      setActionError('')
       const params = new URLSearchParams()
       params.append('limit', PAGE_SIZE)
       params.append('skip', (page - 1) * PAGE_SIZE)
       if (filters.estado) params.append('estado', filters.estado)
       if (filters.municipio) params.append('municipio', filters.municipio)
+      if (filters.lider_id) params.append('lider_id', filters.lider_id)
 
       const response = await api.get(`/voters?${params.toString()}`)
       setVoters(response.data.items ?? [])
@@ -1787,6 +1810,48 @@ function VotersListPage() {
       console.error('Error loading voters:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteRow = async (voter) => {
+    if (!isAdmin) return
+    const ok = window.confirm(`¿Eliminar el sufragante "${voter.nombre}" (CC ${voter.cedula})? Esta acción no se puede deshacer.`)
+    if (!ok) return
+    setActionMessage('')
+    setActionError('')
+    setDeleteRowLoadingId(voter.id)
+    try {
+      await api.delete(`/voters/${voter.id}`)
+      setVoters(prev => prev.filter(v => v.id !== voter.id))
+      setTotalVoters(prev => Math.max(0, (prev || 0) - 1))
+      setActionMessage('Sufragante eliminado correctamente.')
+    } catch (err) {
+      setActionError(err.response?.data?.detail || 'Error eliminando sufragante')
+    } finally {
+      setDeleteRowLoadingId(null)
+    }
+  }
+
+  const handleDeleteAllByLeader = async () => {
+    if (!isAdmin) return
+    const leaderId = filters.lider_id ? parseInt(filters.lider_id, 10) : null
+    if (!leaderId) return
+    const leaderName = leaders.find(l => l.id === leaderId)?.nombre || `ID ${leaderId}`
+    const ok = window.confirm(`¿Eliminar TODOS los sufragantes del líder "${leaderName}"? Esta acción no se puede deshacer.`)
+    if (!ok) return
+    setActionMessage('')
+    setActionError('')
+    setDeleteAllLoading(true)
+    try {
+      const res = await api.delete(`/voters/by-leader/${leaderId}`)
+      const deleted = res.data?.deleted ?? 0
+      setActionMessage(`${deleted} sufragante(s) eliminado(s) del líder seleccionado.`)
+      setPage(1)
+      await loadVoters()
+    } catch (err) {
+      setActionError(err.response?.data?.detail || 'Error eliminando sufragantes del líder')
+    } finally {
+      setDeleteAllLoading(false)
     }
   }
 
@@ -2003,9 +2068,12 @@ function VotersListPage() {
         )}
       </div>
 
+      {actionMessage && <div className="alert alert-success">{actionMessage}</div>}
+      {actionError && <div className="alert alert-error">{actionError}</div>}
+
       <div className="se-cardx">
         <div className="se-section-title"><i className="bi bi-funnel"></i> Filtros</div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
           <div>
             <label className="form-label se-label block mb-1">Estado</label>
             <div className="se-inputgroup flex rounded-2xl overflow-hidden">
@@ -2024,8 +2092,39 @@ function VotersListPage() {
               <input type="text" className="se-input flex-1 min-w-0 px-3 py-2" placeholder="Filtrar por municipio" value={filters.municipio} onChange={(e) => { setPage(1); setFilters(prev => ({ ...prev, municipio: e.target.value })); }} />
             </div>
           </div>
+          {isAdmin && (
+            <div>
+              <label className="form-label se-label block mb-1">Líder</label>
+              <div className="se-inputgroup flex rounded-2xl overflow-hidden">
+                <select
+                  className="se-input flex-1 min-w-0 px-3 py-2 bg-transparent"
+                  value={filters.lider_id}
+                  onChange={(e) => { setPage(1); setFilters(prev => ({ ...prev, lider_id: e.target.value })); }}
+                >
+                  <option value="">Todos</option>
+                  {leaders.map(l => (
+                    <option key={l.id} value={l.id}>{[l.nombre, l.departamento, l.municipio].filter(Boolean).join(' - ')}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
           <div className="flex items-end">
-            <button type="button" onClick={loadVoters} className="btn se-btn-primary w-full">Filtrar</button>
+            <div className="w-full flex flex-col gap-2">
+              <button type="button" onClick={loadVoters} className="btn se-btn-primary w-full">Filtrar</button>
+              {isAdmin && filters.lider_id && (
+                <button
+                  type="button"
+                  onClick={handleDeleteAllByLeader}
+                  disabled={deleteAllLoading}
+                  className="btn se-btn-soft w-full"
+                  style={{ borderColor: 'rgba(239,68,68,.35)', background: 'rgba(239,68,68,.12)' }}
+                >
+                  <i className="bi bi-trash me-2"></i>
+                  {deleteAllLoading ? 'Eliminando...' : 'Eliminar todos del líder'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -2079,16 +2178,28 @@ function VotersListPage() {
                     </button>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    {(voter.estado_validacion === 'revision' || voter.estado_validacion === 'sin_verificar' || voter.estado_validacion === 'inconsistente') && (
-                      <span className="inline-flex gap-2">
+                    <span className="inline-flex gap-2">
+                      {(voter.estado_validacion === 'revision' || voter.estado_validacion === 'sin_verificar' || voter.estado_validacion === 'inconsistente') && (
                         <button type="button" onClick={() => openEditModal(voter)} className="btn se-btn-soft text-sm py-1 px-2">Editar</button>
-                        {SHOW_VERIFIK_BUTTON && (
-                          <button type="button" onClick={() => handleVerifyRow(voter)} disabled={verifyLoadingId === voter.id} className="btn se-btn-primary text-sm py-1 px-2">
-                            {verifyLoadingId === voter.id ? 'Verificando...' : 'Verificar'}
-                          </button>
-                        )}
-                      </span>
-                    )}
+                      )}
+                      {SHOW_VERIFIK_BUTTON && (voter.estado_validacion === 'revision' || voter.estado_validacion === 'sin_verificar' || voter.estado_validacion === 'inconsistente') && (
+                        <button type="button" onClick={() => handleVerifyRow(voter)} disabled={verifyLoadingId === voter.id} className="btn se-btn-primary text-sm py-1 px-2">
+                          {verifyLoadingId === voter.id ? 'Verificando...' : 'Verificar'}
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRow(voter)}
+                          disabled={deleteRowLoadingId === voter.id}
+                          className="btn se-btn-soft text-sm py-1 px-2"
+                          style={{ borderColor: 'rgba(239,68,68,.35)', background: 'rgba(239,68,68,.12)' }}
+                          title="Eliminar sufragante"
+                        >
+                          {deleteRowLoadingId === voter.id ? 'Eliminando...' : 'Eliminar'}
+                        </button>
+                      )}
+                    </span>
                   </td>
                 </tr>
               ))}

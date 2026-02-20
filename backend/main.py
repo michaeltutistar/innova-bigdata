@@ -1277,6 +1277,40 @@ async def actualizar_sufragante(
     logger.info(f"Usuario {current_user.username} actualizó sufragante {sufragante.id}")
     return sufragante
 
+
+@app.delete("/voters/{voter_id}")
+async def eliminar_sufragante(
+    voter_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Eliminar un sufragante por ID (solo superadmin).
+    """
+    sufragante = db.query(Sufragante).filter(Sufragante.id == voter_id).first()
+    if not sufragante:
+        raise HTTPException(status_code=404, detail="Sufragante no encontrado")
+
+    db.delete(sufragante)
+    db.commit()
+    logger.info(f"Superadmin {current_user.username} eliminó sufragante {voter_id}")
+    return {"message": "Sufragante eliminado", "deleted_id": voter_id}
+
+
+@app.delete("/voters/by-leader/{lider_id}")
+async def eliminar_sufragantes_por_lider(
+    lider_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Eliminar todos los sufragantes asociados a un líder (solo superadmin).
+    """
+    deleted = db.query(Sufragante).filter(Sufragante.lider_id == lider_id).delete(synchronize_session=False)
+    db.commit()
+    logger.info(f"Superadmin {current_user.username} eliminó {deleted} sufragante(s) del líder {lider_id}")
+    return {"message": "Sufragantes eliminados", "lider_id": lider_id, "deleted": deleted}
+
 def _normalize_header(h: str) -> str:
     """Normaliza nombre de columna para comparación (sin acentos, mayúsculas, sin espacios dobles)."""
     if h is None:
