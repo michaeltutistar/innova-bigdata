@@ -167,6 +167,8 @@ class Sufragante(Base):
     usuario_registro = Column(String(100))
     fecha_registro = Column(DateTime, default=datetime.utcnow)
     observaciones = Column(Text, nullable=True)
+    # Nombre del archivo Excel si fue registrado por carga masiva; null si fue individual
+    archivo_carga_masiva = Column(String(255), nullable=True)
 
     lider = relationship("Lider", back_populates="sufragantes")
 
@@ -194,6 +196,14 @@ try:
         conn.commit()
 except Exception:
     pass  # Columna ya existe o BD sin tabla sufragantes
+
+# Migración: columna archivo_carga_masiva (sufragantes subidos por Excel)
+try:
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE sufragantes ADD COLUMN IF NOT EXISTS archivo_carga_masiva VARCHAR(255)"))
+        conn.commit()
+except Exception:
+    pass
 
 # =====================
 # Pydantic Models
@@ -1498,6 +1508,7 @@ async def upload_sufragantes_masivo(
                 mesa_votacion=mesa_val or None,
                 direccion_puesto=None,
                 observaciones=(r.get("observaciones") or "").strip() or None,
+                archivo_carga_masiva=file.filename[:255] if file.filename else None,
             )
             db.add(suf)
             db.commit()
@@ -1864,7 +1875,7 @@ async def export_excel(
         "ID", "Nombre", "Cédula", "Edad", "Celular", "Dirección Residencia",
         "Género", "Departamento", "Municipio", "Lugar Votación", "Mesa",
         "Dirección Puesto", "Estado Validación", "Líder ID", "Usuario Registro",
-        "Fecha Registro"
+        "Fecha Registro", "Archivo Carga Masiva"
     ]
     for col, header in enumerate(headers, 1):
         ws.cell(row=1, column=col, value=header)
@@ -1886,6 +1897,7 @@ async def export_excel(
         ws.cell(row=row_idx, column=14, value=s.lider_id)
         ws.cell(row=row_idx, column=15, value=s.usuario_registro or "")
         ws.cell(row=row_idx, column=16, value=s.fecha_registro.isoformat() if s.fecha_registro else "")
+        ws.cell(row=row_idx, column=17, value=s.archivo_carga_masiva or "")
 
     ws2 = wb.create_sheet("Líderes")
     lideres = db.query(Lider).order_by(Lider.nombre).all()
