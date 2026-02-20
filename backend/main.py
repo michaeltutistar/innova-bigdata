@@ -67,7 +67,7 @@ def _get_database_url() -> str:
                 safe_pwd = quote_plus(str(password))
                 return f"postgresql://{user}:{safe_pwd}@{host}:{port}/{dbname}?sslmode=require"
         except Exception as e:
-            logger.warning("No se pudo obtener el secret de RDS desde Secrets Manager: %s. Usando RDS_* o DATABASE_URL.", e)
+            logging.warning("No se pudo obtener el secret de RDS desde Secrets Manager: %s. Usando RDS_* o DATABASE_URL.", e)
 
     # 2) Variables RDS_* en .env
     _rds_host = os.getenv("RDS_HOST")
