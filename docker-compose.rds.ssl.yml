@@ -17,6 +17,9 @@ services:
       - RDS_PASSWORD=${RDS_PASSWORD}
       - RDS_DB=${RDS_DB:-innovabigdata}
       - RDS_PORT=${RDS_PORT:-5432}
+      - AWS_RDS_SECRET_ARN=${AWS_RDS_SECRET_ARN}
+      - AWS_RDS_SECRET_NAME=${AWS_RDS_SECRET_NAME}
+      - AWS_REGION=${AWS_REGION:-us-east-2}
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM:-HS256}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-240}
@@ -25,6 +28,9 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS}
       - HOST=${HOST:-0.0.0.0}
       - PORT=${PORT:-8000}
+      - GMAIL_USER=${GMAIL_USER}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
+      - RESET_PASSWORD_BASE_URL=${RESET_PASSWORD_BASE_URL:-https://www.innovabigdata.com}
     restart: unless-stopped
     volumes:
       - backend_data:/app/data
