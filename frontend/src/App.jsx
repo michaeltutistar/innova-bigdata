@@ -1360,6 +1360,7 @@ function LeadersPage() {
   const [municipiosFiltrados, setMunicipiosFiltrados] = useState([])
   const [selectedLeaderIds, setSelectedLeaderIds] = useState(new Set())
   const [exportLeadersLoading, setExportLeadersLoading] = useState(false)
+  const [incidenciasLoading, setIncidenciasLoading] = useState(false)
 
   useEffect(() => {
     loadLeaders()
@@ -1530,6 +1531,41 @@ function LeadersPage() {
     }
   }
 
+  const handleDownloadIncidencias = async () => {
+    setIncidenciasLoading(true)
+    setError('')
+    try {
+      const params = new URLSearchParams()
+      if (selectedLeaderIds.size > 0) {
+        params.set('leader_ids', [...selectedLeaderIds].join(','))
+      }
+      const response = await api.get(`/export/incidencias/xlsx?${params.toString()}`, { responseType: 'blob' })
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const date = new Date().toISOString().split('T')[0]
+      if (selectedLeaderIds.size === 1) {
+        const onlyId = [...selectedLeaderIds][0]
+        const leader = leaders.find(l => l.id === onlyId)
+        const safeName = (leader?.nombre || 'lider').toString().trim().replace(/\s+/g, '_').replace(/[^A-Za-z0-9_-]/g, '')
+        a.download = `incidencias_${safeName || 'lider'}_${date}.xlsx`
+      } else if (selectedLeaderIds.size > 1) {
+        a.download = `incidencias_${selectedLeaderIds.size}_lideres_${date}.xlsx`
+      } else {
+        a.download = `incidencias_todos_${date}.xlsx`
+      }
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      a.remove()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Error descargando incidencias')
+    } finally {
+      setIncidenciasLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -1545,6 +1581,9 @@ function LeadersPage() {
         <div className="flex gap-2 flex-wrap">
           <button type="button" onClick={handleExportLeadersExcel} disabled={exportLeadersLoading || leaders.length === 0} className="btn se-btn-soft">
             <i className="bi bi-file-earmark-excel me-2"></i>{exportLeadersLoading ? 'Exportando...' : 'Exportar Excel'}
+          </button>
+          <button type="button" onClick={handleDownloadIncidencias} disabled={incidenciasLoading} className="btn se-btn-soft">
+            <i className="bi bi-exclamation-triangle me-2"></i>{incidenciasLoading ? 'Descargando...' : 'Incidencias'}
           </button>
           <button type="button" onClick={openCreateModal} className="btn se-btn-primary">
             <i className="bi bi-person-plus me-2"></i>Nuevo Líder

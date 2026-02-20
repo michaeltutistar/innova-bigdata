@@ -7,6 +7,7 @@ import os
 import logging
 import secrets
 import smtplib
+import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
@@ -136,6 +137,7 @@ class Lider(Base):
     activo = Column(Boolean, default=True)
 
     sufragantes = relationship("Sufragante", back_populates="lider")
+    incidencias_carga_masiva = relationship("CargaMasivaIncidencia", back_populates="lider")
 
 class Sufragante(Base):
     __tablename__ = "sufragantes"
@@ -167,6 +169,21 @@ class Sufragante(Base):
     observaciones = Column(Text, nullable=True)
 
     lider = relationship("Lider", back_populates="sufragantes")
+
+
+class CargaMasivaIncidencia(Base):
+    __tablename__ = "carga_masiva_incidencias"
+
+    id = Column(Integer, primary_key=True, index=True)
+    lider_id = Column(Integer, ForeignKey("lideres.id"), index=True, nullable=False)
+    usuario = Column(String(100), nullable=True)
+    archivo = Column(String(255), nullable=True)
+    created = Column(Integer, default=0)
+    total_rows = Column(Integer, default=0)
+    errores_json = Column(Text, nullable=False)  # JSON array de strings: ["Fila 2: ...", ...]
+    fecha = Column(DateTime, default=datetime.utcnow, index=True)
+
+    lider = relationship("Lider", back_populates="incidencias_carga_masiva")
 
 Base.metadata.create_all(bind=engine)
 
@@ -1496,6 +1513,22 @@ async def upload_sufragantes_masivo(
             db.rollback()
             logger.exception("Error creando sufragante en carga masiva")
             errors.append(f"Fila {r['row']}: {str(e)}")
+    # Guardar incidencias (errores) asociadas al líder para exportación posterior (solo si hubo errores)
+    if errors:
+        try:
+            inc = CargaMasivaIncidencia(
+                lider_id=lider_id,
+                usuario=current_user.username,
+                archivo=file.filename or None,
+                created=created,
+                total_rows=len(rows),
+                errores_json=json.dumps(errors, ensure_ascii=False),
+            )
+            db.add(inc)
+            db.commit()
+        except Exception:
+            db.rollback()
+            logger.exception("No se pudo guardar incidencias de carga masiva")
     return {"created": created, "errors": errors, "total_rows": len(rows)}
 
 # =====================
@@ -1892,6 +1925,98 @@ async def export_excel(
         content=content,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
+@app.get("/export/incidencias/xlsx")
+async def export_incidencias_excel(
+    leader_ids: Optional[str] = Query(None, description="IDs de líderes separados por coma; si no se envía, se exportan todos"),
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_superadmin)
+):
+    """
+    Exportar incidencias (errores) de cargas masivas por líder a Excel. Solo superadmin.
+    Si leader_ids no se envía, se exportan las incidencias de todos los líderes.
+    """
+    query = db.query(CargaMasivaIncidencia, Lider).join(Lider, Lider.id == CargaMasivaIncidencia.lider_id)
+    selected_ids: Optional[List[int]] = None
+    if leader_ids and leader_ids.strip():
+        try:
+            selected_ids = [int(x.strip()) for x in leader_ids.split(",") if x.strip()]
+            if selected_ids:
+                query = query.filter(CargaMasivaIncidencia.lider_id.in_(selected_ids))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="leader_ids debe ser una lista de números separados por coma")
+
+    rows = query.order_by(CargaMasivaIncidencia.fecha.desc(), CargaMasivaIncidencia.id.desc()).all()
+    if not rows:
+        raise HTTPException(status_code=404, detail="No hay incidencias registradas para exportar")
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Incidencias"
+    ws.append(["Fecha", "Líder", "Cédula líder", "Archivo", "Creados", "Filas archivo", "Fila (Excel)", "Error"])
+
+    fila_re = re.compile(r"^Fila\\s+(\\d+)\\s*:\\s*(.*)$", re.IGNORECASE)
+    for inc, lid in rows:
+        try:
+            errores = json.loads(inc.errores_json or "[]")
+        except Exception:
+            errores = []
+        if not isinstance(errores, list):
+            errores = []
+        if not errores:
+            ws.append([
+                inc.fecha.strftime("%Y-%m-%d %H:%M:%S") if inc.fecha else "",
+                lid.nombre or "",
+                lid.cedula or "",
+                inc.archivo or "",
+                inc.created or 0,
+                inc.total_rows or 0,
+                "",
+                "",
+            ])
+            continue
+        for e in errores:
+            s = str(e or "")
+            m = fila_re.match(s)
+            fila_excel = int(m.group(1)) if m else None
+            msg = (m.group(2) if m else s).strip()
+            ws.append([
+                inc.fecha.strftime("%Y-%m-%d %H:%M:%S") if inc.fecha else "",
+                lid.nombre or "",
+                lid.cedula or "",
+                inc.archivo or "",
+                inc.created or 0,
+                inc.total_rows or 0,
+                fila_excel,
+                msg,
+            ])
+
+    buffer = BytesIO()
+    wb.save(buffer)
+    content = buffer.getvalue()
+    buffer.close()
+
+    def _safe_name(name: str) -> str:
+        base = re.sub(r"\\s+", "_", (name or "").strip())
+        base = re.sub(r"[^A-Za-z0-9_\\-]+", "", base)
+        return base or "lider"
+
+    suffix = datetime.now().strftime("%Y%m%d_%H%M%S")
+    if selected_ids and len(selected_ids) == 1:
+        lid = db.query(Lider).filter(Lider.id == selected_ids[0]).first()
+        filename = f"incidencias_{_safe_name(lid.nombre if lid else 'lider')}_{suffix}.xlsx"
+    elif selected_ids:
+        filename = f"incidencias_{len(selected_ids)}_lideres_{suffix}.xlsx"
+    else:
+        filename = f"incidencias_todos_{suffix}.xlsx"
+
+    logger.info(f"Usuario {current_user.username} exportó incidencias a Excel")
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename=\"{filename}\"'}
     )
 
 # =====================
