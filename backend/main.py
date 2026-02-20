@@ -1856,16 +1856,29 @@ async def export_leaders_excel(
 
 @app.get("/export/xlsx")
 async def export_excel(
+    lider_id: Optional[int] = Query(None, description="Filtrar sufragantes por líder; si no se envía, se exportan todos"),
+    estado: Optional[str] = Query(None, description="Filtrar por estado_validacion"),
+    municipio: Optional[str] = Query(None, description="Filtrar por municipio"),
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user)
 ):
     """
-    Exportar todos los sufragantes (y líderes) a Excel. Permitido para superadmin y operador.
+    Exportar sufragantes (y líderes) a Excel. Permitido para superadmin y operador.
+    Si se envían lider_id, estado o municipio, se exportan solo los sufragantes que coincidan; si no, el listado completo.
     """
     if current_user.rol not in ("superadmin", "operador"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Sin permiso para exportar")
 
-    sufragantes = db.query(Sufragante).order_by(Sufragante.fecha_registro.desc()).all()
+    query = db.query(Sufragante)
+    if lider_id is not None:
+        query = query.filter(Sufragante.lider_id == lider_id)
+    if estado:
+        query = query.filter(Sufragante.estado_validacion == estado)
+    if municipio:
+        query = query.filter(Sufragante.municipio == municipio.upper())
+    if current_user.rol == "operador":
+        query = query.filter(Sufragante.usuario_registro == current_user.username)
+    sufragantes = query.order_by(Sufragante.fecha_registro.desc()).all()
 
     wb = openpyxl.Workbook()
     ws = wb.active

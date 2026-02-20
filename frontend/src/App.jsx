@@ -1898,7 +1898,11 @@ function VotersListPage() {
     if (user?.rol !== 'superadmin' && user?.rol !== 'operador') return
     setExportLoading(true)
     try {
-      const res = await api.get('/export/xlsx', { responseType: 'blob' })
+      const params = new URLSearchParams()
+      if (filters.lider_id) params.set('lider_id', filters.lider_id)
+      if (filters.estado) params.set('estado', filters.estado)
+      if (filters.municipio) params.set('municipio', filters.municipio)
+      const res = await api.get(`/export/xlsx?${params.toString()}`, { responseType: 'blob' })
       const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
