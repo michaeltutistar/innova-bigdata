@@ -1465,6 +1465,9 @@ async def upload_sufragantes_masivo(
         if not cedula or len(cedula) < 6 or not cedula.isdigit():
             errors.append(f"Fila {r['row']}: cédula inválida (6-10 dígitos)")
             continue
+        if len(cedula) > 10:
+            errors.append(f"Fila {r['row']}: cédula demasiado larga (máximo 10 dígitos)")
+            continue
         try:
             edad_num = int(float(edad_raw)) if edad_raw not in (None, "") else None
         except (TypeError, ValueError):
@@ -1517,13 +1520,23 @@ async def upload_sufragantes_masivo(
             db.rollback()
             err_msg = str(e.orig) if getattr(e, "orig", None) else str(e)
             if "cedula" in err_msg.lower() or "unique" in err_msg.lower():
-                errors.append(f"Fila {r['row']}: cédula {cedula} ya registrada")
+                if "value too long" in err_msg.lower() or "varying(10)" in err_msg.lower():
+                    errors.append(f"Fila {r['row']}: cédula demasiado larga (máximo 10 dígitos)")
+                else:
+                    errors.append(f"Fila {r['row']}: cédula {cedula} ya registrada")
             else:
-                errors.append(f"Fila {r['row']}: error de BD - {err_msg[:100]}")
+                if "value too long" in err_msg.lower() or "varying(10)" in err_msg.lower():
+                    errors.append(f"Fila {r['row']}: cédula demasiado larga (máximo 10 dígitos)")
+                else:
+                    errors.append(f"Fila {r['row']}: error de BD - {err_msg[:100]}")
         except Exception as e:
             db.rollback()
             logger.exception("Error creando sufragante en carga masiva")
-            errors.append(f"Fila {r['row']}: {str(e)}")
+            err_str = str(e)
+            if "value too long" in err_str.lower() or "stringdatarighttruncation" in err_str.lower() or "varying(10)" in err_str.lower():
+                errors.append(f"Fila {r['row']}: cédula demasiado larga (máximo 10 dígitos)")
+            else:
+                errors.append(f"Fila {r['row']}: {err_str[:120]}")
     # Guardar incidencias (errores) asociadas al líder para exportación posterior (solo si hubo errores)
     if errors:
         try:
@@ -1880,6 +1893,13 @@ async def export_excel(
         query = query.filter(Sufragante.usuario_registro == current_user.username)
     sufragantes = query.order_by(Sufragante.fecha_registro.desc()).all()
 
+    # Mapa lider_id -> nombre para la columna Líder
+    lider_ids = {s.lider_id for s in sufragantes if s.lider_id is not None}
+    lideres_by_id = {}
+    if lider_ids:
+        for lid in db.query(Lider).filter(Lider.id.in_(lider_ids)).all():
+            lideres_by_id[lid.id] = lid.nombre or ""
+
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Sufragantes"
@@ -1887,7 +1907,7 @@ async def export_excel(
     headers = [
         "ID", "Nombre", "Cédula", "Edad", "Celular", "Dirección Residencia",
         "Género", "Departamento", "Municipio", "Lugar Votación", "Mesa",
-        "Dirección Puesto", "Estado Validación", "Líder ID", "Usuario Registro",
+        "Dirección Puesto", "Estado Validación", "Líder", "Usuario Registro",
         "Fecha Registro", "Archivo Carga Masiva"
     ]
     for col, header in enumerate(headers, 1):
@@ -1907,7 +1927,7 @@ async def export_excel(
         ws.cell(row=row_idx, column=11, value=s.mesa_votacion or "")
         ws.cell(row=row_idx, column=12, value=s.direccion_puesto or "")
         ws.cell(row=row_idx, column=13, value=s.estado_validacion or "")
-        ws.cell(row=row_idx, column=14, value=s.lider_id)
+        ws.cell(row=row_idx, column=14, value=lideres_by_id.get(s.lider_id, "") if s.lider_id else "")
         ws.cell(row=row_idx, column=15, value=s.usuario_registro or "")
         ws.cell(row=row_idx, column=16, value=s.fecha_registro.isoformat() if s.fecha_registro else "")
         ws.cell(row=row_idx, column=17, value=s.archivo_carga_masiva or "")
